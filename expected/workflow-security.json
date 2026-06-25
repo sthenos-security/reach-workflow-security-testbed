@@ -11,10 +11,11 @@
   "fixture_count": 11,
   "native_expected": {
     "scanner": "reachable-workflow-security",
-    "total_findings": 24,
+    "total_findings": 27,
     "by_class": {
       "cicd_artifact_integrity_gap": 2,
       "cicd_auth_logic_error": 7,
+      "cicd_code_injection": 3,
       "cicd_command_injection": 1,
       "cicd_cross_workflow_poisoning": 2,
       "cicd_reusable_workflow_boundary": 1,
@@ -28,6 +29,7 @@
       "cicd_unpinned_action": 4,
       "cordyceps_artifact_poisoning": 2,
       "cordyceps_auth_logic_error": 7,
+      "cordyceps_code_injection": 3,
       "cordyceps_command_injection": 1,
       "cordyceps_cross_workflow_privilege_escalation": 2,
       "cordyceps_secret_authority_exposure": 2,
@@ -37,7 +39,7 @@
       "secrets_inherit": 1
     },
     "by_severity": {
-      "HIGH": 19,
+      "HIGH": 22,
       "LOW": 1,
       "MEDIUM": 4
     },
@@ -45,7 +47,7 @@
       ".github/workflows/cordyceps-artifact-consumer.yml": 5,
       ".github/workflows/cordyceps-artifact-producer.yml": 5,
       ".github/workflows/cordyceps-broken-authorization.yml": 2,
-      ".github/workflows/cordyceps-code-injection.yml": 2,
+      ".github/workflows/cordyceps-code-injection.yml": 5,
       ".github/workflows/cordyceps-command-injection.yml": 2,
       ".github/workflows/reusable-untrusted-caller.yml": 4,
       ".github/workflows/secret-authority-exposure.yml": 3,
@@ -65,11 +67,11 @@
     {
       "id": "WF-CORDYCEPS-CODE-01",
       "path": ".github/workflows/cordyceps-code-injection.yml",
-      "rule_id": "cordyceps_auth_logic_error",
-      "class": "cicd_auth_logic_error",
+      "rule_id": "cordyceps_code_injection",
+      "class": "cicd_code_injection",
       "risk": "HIGH",
       "expected_min_findings": 1,
-      "remediation": "Avoid privileged issue-comment script paths or add explicit actor and association gates before script execution."
+      "remediation": "Treat event fields as data and avoid interpolating them into evaluated script or code-generation contexts."
     },
     {
       "id": "WF-CORDYCEPS-AUTH-01",

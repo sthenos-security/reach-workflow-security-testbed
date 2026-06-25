@@ -14,8 +14,8 @@ Golden baseline:
 | Baseline dimension | Expected |
 |---|---:|
 | Workflow fixture files | 11 |
-| Native REACHABLE workflow-security findings | 24 |
-| High-risk native findings | 19 |
+| Native REACHABLE workflow-security findings | 27 |
+| High-risk native findings | 22 |
 | Medium-risk native findings | 4 |
 | Low-risk native findings | 1 |
 | Defended native-control files | 2 |
@@ -27,6 +27,7 @@ treat optional tool output as corroborating evidence.
 | Required class | Risk | Expected evidence | Remediation guidance |
 |---|---|---|---|
 | `cicd_command_injection` | Attacker-controlled GitHub event data reaches shell or script execution. | PR title, issue/comment text, or workflow input used in `run` or `actions/github-script`. | Move untrusted values into quoted environment variables, validate/escape input, or avoid executing event-controlled content. |
+| `cicd_code_injection` | Attacker-controlled GitHub event data reaches evaluated script or code-generation context. | Issue/comment text or workflow input used inside `actions/github-script`, `script:`, or inline interpreter/eval contexts. | Treat event fields as data, pass them through environment variables or structured inputs, and avoid string interpolation into executable scripts. |
 | `cicd_auth_logic_error` | A privileged workflow can run from a low-trust trigger without an explicit local authorization guard. | `pull_request_target`, `issue_comment`, or `workflow_run` with write/OIDC/secret/release authority and no visible gate. | Add actor/association/base-ref/environment protection checks and reduce permissions to least privilege. |
 | `cicd_artifact_integrity_gap` | A release/deploy path consumes artifact or cache data without digest/provenance verification. | `download-artifact`, `upload-artifact`, or cache use near release/deploy/package authority. | Bind artifacts to digest/provenance, use attestations, and verify before privileged consumption. |
 | `cicd_cross_workflow_poisoning` | Low-trust workflow state can cross into a privileged workflow. | `workflow_run` or reusable workflow boundary with artifact/cache/secrets crossing trust levels. | Split trust zones, require provenance and environment gates, and avoid `secrets: inherit` from untrusted callers. |
@@ -67,7 +68,7 @@ Expected success output:
 ```text
 Workflow-security expected-results validation passed
   workflow files: 11
-  native findings: 24
+  native findings: 27
 ```
 
 See [expected/workflow-security.json](expected/workflow-security.json) for the

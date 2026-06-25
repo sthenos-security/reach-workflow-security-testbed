@@ -20,11 +20,11 @@ proof target is:
 | Dimension | Expected |
 |---|---:|
 | Workflow fixture files | 11 |
-| Native REACHABLE workflow-security findings | 24 |
-| High-risk native findings | 19 |
+| Native REACHABLE workflow-security findings | 27 |
+| High-risk native findings | 22 |
 | Medium-risk native findings | 4 |
 | Low-risk native findings | 1 |
-| Required risk classes | 8 |
+| Required risk classes | 9 |
 | Defended native-control files | 2 |
 
 Optional tools such as `zizmor` and `actionlint` may add corroborating rows.
@@ -49,7 +49,7 @@ security surface, separate from application source code and package inventory.
 | Area | Fixture | Expected class |
 |---|---|---|
 | Cordyceps command injection | `.github/workflows/cordyceps-command-injection.yml` | `cicd_command_injection` |
-| Cordyceps code injection | `.github/workflows/cordyceps-code-injection.yml` | `cicd_command_injection` |
+| Cordyceps code injection | `.github/workflows/cordyceps-code-injection.yml` | `cicd_code_injection` |
 | Cordyceps broken authorization | `.github/workflows/cordyceps-broken-authorization.yml` | `cicd_auth_logic_error` |
 | Cordyceps artifact poisoning | `.github/workflows/cordyceps-artifact-producer.yml` and `.github/workflows/cordyceps-artifact-consumer.yml` | `cicd_artifact_integrity_gap`, `cicd_cross_workflow_poisoning` |
 | Secret authority exposure | `.github/workflows/secret-authority-exposure.yml` | `cicd_secret_authority_exposure` |
