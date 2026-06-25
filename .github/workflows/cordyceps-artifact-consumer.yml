@@ -1,0 +1,22 @@
+name: Fixture - Cordyceps artifact consumer
+
+on:
+  workflow_run:
+    workflows: ["Fixture - Cordyceps artifact producer"]
+    types: [completed]
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  consume-low-trust-artifact:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: candidate-release
+      - name: Simulated privileged release
+        run: |
+          echo "simulated gh release create v1 dist/*"

@@ -1,0 +1,17 @@
+name: Defended - guarded pull request
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  guarded:
+    if: ${{ github.event.pull_request.author_association == 'MEMBER' || github.event.pull_request.author_association == 'OWNER' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: No checkout of attacker head
+        run: |
+          echo "guarded metadata-only review"

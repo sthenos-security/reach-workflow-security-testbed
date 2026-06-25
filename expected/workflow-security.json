@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "name": "reach-workflow-security-testbed baseline",
+  "verified_with_reachable": "local reach-core workflow_security implementation",
+  "notes": [
+    "All workflows are synthetic scanner fixtures.",
+    "Every intentionally vulnerable job is guarded with if: ${{ false }}.",
+    "Native REACHABLE workflow-security findings are the stable validation contract.",
+    "zizmor and actionlint findings are useful corroborating evidence but are not exact-count gates."
+  ],
+  "fixture_count": 11,
+  "native_expected": {
+    "scanner": "reachable-workflow-security",
+    "total_findings": 24,
+    "by_class": {
+      "cicd_artifact_integrity_gap": 2,
+      "cicd_auth_logic_error": 7,
+      "cicd_command_injection": 1,
+      "cicd_cross_workflow_poisoning": 2,
+      "cicd_reusable_workflow_boundary": 1,
+      "cicd_secret_authority_exposure": 5,
+      "cicd_self_hosted_runner_exposure": 1,
+      "cicd_unpinned_action": 4,
+      "cicd_untrusted_checkout": 1
+    },
+    "by_rule_id": {
+      "cicd_self_hosted_runner_exposure": 1,
+      "cicd_unpinned_action": 4,
+      "cordyceps_artifact_poisoning": 2,
+      "cordyceps_auth_logic_error": 7,
+      "cordyceps_command_injection": 1,
+      "cordyceps_cross_workflow_privilege_escalation": 2,
+      "cordyceps_secret_authority_exposure": 2,
+      "cordyceps_untrusted_checkout": 1,
+      "package_publish": 2,
+      "release_publish": 1,
+      "secrets_inherit": 1
+    },
+    "by_severity": {
+      "HIGH": 19,
+      "LOW": 1,
+      "MEDIUM": 4
+    },
+    "by_path": {
+      ".github/workflows/cordyceps-artifact-consumer.yml": 5,
+      ".github/workflows/cordyceps-artifact-producer.yml": 5,
+      ".github/workflows/cordyceps-broken-authorization.yml": 2,
+      ".github/workflows/cordyceps-code-injection.yml": 2,
+      ".github/workflows/cordyceps-command-injection.yml": 2,
+      ".github/workflows/reusable-untrusted-caller.yml": 4,
+      ".github/workflows/secret-authority-exposure.yml": 3,
+      ".github/workflows/self-hosted-runner-exposure.yml": 1
+    }
+  },
+  "required_detections": [
+    {
+      "id": "WF-CORDYCEPS-CMD-01",
+      "path": ".github/workflows/cordyceps-command-injection.yml",
+      "rule_id": "cordyceps_command_injection",
+      "class": "cicd_command_injection",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Move untrusted event fields into quoted environment variables or validate and escape them before use."
+    },
+    {
+      "id": "WF-CORDYCEPS-CODE-01",
+      "path": ".github/workflows/cordyceps-code-injection.yml",
+      "rule_id": "cordyceps_auth_logic_error",
+      "class": "cicd_auth_logic_error",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Avoid privileged issue-comment script paths or add explicit actor and association gates before script execution."
+    },
+    {
+      "id": "WF-CORDYCEPS-AUTH-01",
+      "path": ".github/workflows/cordyceps-broken-authorization.yml",
+      "rule_id": "cordyceps_auth_logic_error",
+      "class": "cicd_auth_logic_error",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Add explicit authorization gates and reduce write/OIDC/package authority for low-trust triggers."
+    },
+    {
+      "id": "WF-CORDYCEPS-ARTIFACT-01",
+      "path": ".github/workflows/cordyceps-artifact-consumer.yml",
+      "rule_id": "cordyceps_artifact_poisoning",
+      "class": "cicd_artifact_integrity_gap",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Verify artifact digest, provenance, or attestation before release or deploy authority consumes it."
+    },
+    {
+      "id": "WF-CORDYCEPS-CROSS-01",
+      "path": ".github/workflows/cordyceps-artifact-consumer.yml",
+      "rule_id": "cordyceps_cross_workflow_privilege_escalation",
+      "class": "cicd_cross_workflow_poisoning",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Do not move low-trust artifacts into privileged workflow_run consumers without provenance and approval gates."
+    },
+    {
+      "id": "WF-CORDYCEPS-SECRET-01",
+      "path": ".github/workflows/secret-authority-exposure.yml",
+      "rule_id": "cordyceps_secret_authority_exposure",
+      "class": "cicd_secret_authority_exposure",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Remove secrets from low-trust triggers or require protected environments and least-privilege scoped tokens."
+    },
+    {
+      "id": "WF-CORDYCEPS-CHECKOUT-01",
+      "path": ".github/workflows/cordyceps-artifact-producer.yml",
+      "rule_id": "cordyceps_untrusted_checkout",
+      "class": "cicd_untrusted_checkout",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Avoid checking out attacker-controlled head refs inside privileged workflows."
+    },
+    {
+      "id": "WF-CICD-RUNNER-01",
+      "path": ".github/workflows/self-hosted-runner-exposure.yml",
+      "rule_id": "cicd_self_hosted_runner_exposure",
+      "class": "cicd_self_hosted_runner_exposure",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Use ephemeral hosted runners for untrusted events or isolate self-hosted runners behind approval gates."
+    },
+    {
+      "id": "WF-CICD-PINNING-01",
+      "path": ".github/workflows/cordyceps-artifact-producer.yml",
+      "rule_id": "cicd_unpinned_action",
+      "class": "cicd_unpinned_action",
+      "risk": "MEDIUM",
+      "expected_min_findings": 1,
+      "remediation": "Pin third-party actions to immutable commit SHAs."
+    }
+  ],
+  "defended_controls": [
+    {
+      "path": ".github/workflows/defended-internal-release.yml",
+      "native_findings_expected": 0,
+      "reason": "Internal push trigger, read-only permissions, and SHA-pinned checkout."
+    },
+    {
+      "path": ".github/workflows/defended-guarded-pr.yml",
+      "native_findings_expected": 0,
+      "reason": "Low-trust trigger is guarded and has read-only permission."
+    }
+  ],
+  "minimum_contract": {
+    "coverage_status": "complete",
+    "workflow_security_prod_status": "PRODUCTION",
+    "ai_review_prompt": "workflow_security_review",
+    "raw_yaml_in_cloud_rollup": false,
+    "real_secret_values": false
+  }
+}

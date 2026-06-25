@@ -1,0 +1,16 @@
+name: Fixture - Cordyceps command injection
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  vulnerable-command:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Attacker-controlled PR title reaches shell
+        run: 'echo "simulated release note: ${{ github.event.pull_request.title }}"'

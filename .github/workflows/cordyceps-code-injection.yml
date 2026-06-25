@@ -1,0 +1,20 @@
+name: Fixture - Cordyceps code injection
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+
+jobs:
+  vulnerable-script:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Attacker-controlled comment reaches script context
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log("simulated moderation: ${{ github.event.comment.body }}")
+

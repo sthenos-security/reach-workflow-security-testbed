@@ -1,0 +1,17 @@
+name: Fixture - self-hosted runner exposure
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  low-trust-self-hosted:
+    if: ${{ false }}
+    runs-on: self-hosted
+    steps:
+      - name: Simulated untrusted code on persistent runner
+        run: |
+          echo "${{ github.event.pull_request.title }}"

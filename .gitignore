@@ -1,0 +1,7 @@
+.reachable/
+__pycache__/
+*.pyc
+*.db
+*.sqlite
+node_modules/
+.DS_Store

@@ -1,0 +1,15 @@
+name: Fixture - untrusted reusable caller
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  call-reusable:
+    if: ${{ false }}
+    uses: ./.github/workflows/reusable-inherit-secrets.yml
+    secrets: inherit
+
