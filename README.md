@@ -22,8 +22,8 @@ proof target is:
 | Workflow fixture files | 22 |
 | Native-positive workflow files | 19 |
 | Zero-native fixture files | 3 |
-| Native REACHABLE workflow-security findings | 85 |
-| Critical native findings | 27 |
+| Native REACHABLE workflow-security findings | 84 |
+| Critical native findings | 26 |
 | High-risk native findings | 50 |
 | Medium-risk native findings | 6 |
 | Low-risk native findings | 2 |
@@ -34,6 +34,9 @@ Optional tools such as `zizmor` and `actionlint` may add corroborating rows.
 The stable validation contract is the exact native REACHABLE finding set, the
 required class detections, and the zero-native fixture paths documented in
 `expected/workflow-security.json`.
+The native baseline intentionally excludes duplicate generic secret-scanner rows
+for workflow YAML; workflow secret references are validated as workflow
+authority evidence.
 
 ## Safety Contract
 

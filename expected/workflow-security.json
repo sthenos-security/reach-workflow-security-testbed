@@ -6,6 +6,7 @@
     "All workflows are synthetic scanner fixtures.",
     "Every intentionally vulnerable job is guarded with if: ${{ false }}.",
     "Native REACHABLE workflow-security findings are the exact validation contract for this lab.",
+    "The native workflow-security baseline excludes duplicate generic secret-scanner rows for workflow YAML; workflow secret references are modeled as workflow authority evidence.",
     "zizmor and actionlint findings are useful corroborating evidence but are not exact-count gates."
   ],
   "fixture_count": 22,
@@ -13,7 +14,7 @@
   "zero_native_fixture_count": 3,
   "native_expected": {
     "scanner": "reachable-workflow-security",
-    "total_findings": 85,
+    "total_findings": 84,
     "by_class": {
       "cicd_action_supply_chain_exfiltration": 1,
       "cicd_artifact_integrity_gap": 3,
@@ -29,7 +30,7 @@
       "cicd_reusable_workflow_boundary": 1,
       "cicd_reusable_workflow_injection": 1,
       "cicd_secret_authority_exposure": 11,
-      "cicd_secret_exfiltration_path": 11,
+      "cicd_secret_exfiltration_path": 10,
       "cicd_self_hosted_runner_exposure": 1,
       "cicd_step_summary_exfiltration": 1,
       "cicd_suspicious_remote_execution": 1,
@@ -47,7 +48,7 @@
       "cicd_malware_signature": 1,
       "cicd_oidc_trust_exposure": 4,
       "cicd_reusable_workflow_injection": 1,
-      "cicd_secret_exfiltration_path": 11,
+      "cicd_secret_exfiltration_path": 10,
       "cicd_self_hosted_runner_exposure": 1,
       "cicd_step_summary_exfiltration": 1,
       "cicd_suspicious_remote_execution": 1,
@@ -69,7 +70,7 @@
       "secrets_inherit": 1
     },
     "by_severity": {
-      "CRITICAL": 27,
+      "CRITICAL": 26,
       "HIGH": 50,
       "LOW": 2,
       "MEDIUM": 6
@@ -88,7 +89,7 @@
       ".github/workflows/reusable-untrusted-caller.yml": 5,
       ".github/workflows/reusable-workflow-injection.yml": 1,
       ".github/workflows/secret-authority-exposure.yml": 4,
-      ".github/workflows/secret-exfiltration.yml": 10,
+      ".github/workflows/secret-exfiltration.yml": 9,
       ".github/workflows/self-hosted-runner-exposure.yml": 1,
       ".github/workflows/step-summary-exfiltration.yml": 9,
       ".github/workflows/suspicious-workflow-execution.yml": 5,

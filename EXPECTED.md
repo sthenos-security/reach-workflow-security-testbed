@@ -17,8 +17,8 @@ Golden baseline:
 | Workflow fixture files | 22 |
 | Native-positive workflow files | 19 |
 | Zero-native fixture files | 3 |
-| Native REACHABLE workflow-security findings | 85 |
-| Critical native findings | 27 |
+| Native REACHABLE workflow-security findings | 84 |
+| Critical native findings | 26 |
 | High-risk native findings | 50 |
 | Medium-risk native findings | 6 |
 | Low-risk native findings | 2 |
@@ -29,6 +29,11 @@ The exact optional-tool count can change as `zizmor` and `actionlint` evolve.
 For that reason, CI should validate the exact native REACHABLE contract,
 including class/rule/path counts, and treat optional tool output as
 corroborating evidence.
+
+The native workflow-security baseline excludes duplicate generic secret-scanner
+rows for workflow YAML. Workflow secret references such as
+`${{ secrets.NPM_TOKEN }}` are modeled as workflow authority evidence, not as
+literal leaked secret values.
 
 | Required class | Risk | Expected evidence | Remediation guidance |
 |---|---|---|---|
@@ -102,7 +107,7 @@ Expected success output:
 ```text
 Workflow-security expected-results validation passed
   workflow files: 22
-  native findings: 85
+  native findings: 84
 ```
 
 See [expected/workflow-security.json](expected/workflow-security.json) for the
