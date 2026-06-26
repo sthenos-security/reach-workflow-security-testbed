@@ -1,0 +1,21 @@
+name: trigger abuse
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_ref:
+        required: true
+  repository_dispatch:
+    types: [release-now]
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: gh release create "${{ github.event.client_payload.tag }}"
+

@@ -5,53 +5,95 @@
   "notes": [
     "All workflows are synthetic scanner fixtures.",
     "Every intentionally vulnerable job is guarded with if: ${{ false }}.",
-    "Native REACHABLE workflow-security findings are the stable validation contract.",
+    "Native REACHABLE workflow-security findings are the exact validation contract for this lab.",
     "zizmor and actionlint findings are useful corroborating evidence but are not exact-count gates."
   ],
-  "fixture_count": 11,
+  "fixture_count": 22,
+  "native_positive_fixture_count": 19,
+  "zero_native_fixture_count": 3,
   "native_expected": {
     "scanner": "reachable-workflow-security",
-    "total_findings": 27,
+    "total_findings": 85,
     "by_class": {
-      "cicd_artifact_integrity_gap": 2,
-      "cicd_auth_logic_error": 7,
+      "cicd_action_supply_chain_exfiltration": 1,
+      "cicd_artifact_integrity_gap": 3,
+      "cicd_auth_logic_error": 17,
       "cicd_code_injection": 3,
-      "cicd_command_injection": 1,
-      "cicd_cross_workflow_poisoning": 2,
+      "cicd_command_injection": 2,
+      "cicd_concurrency_toctou": 1,
+      "cicd_cross_workflow_poisoning": 3,
+      "cicd_encoded_payload_execution": 1,
+      "cicd_environment_protection_bypass": 1,
+      "cicd_malware_signature": 1,
+      "cicd_oidc_trust_exposure": 4,
       "cicd_reusable_workflow_boundary": 1,
-      "cicd_secret_authority_exposure": 5,
+      "cicd_reusable_workflow_injection": 1,
+      "cicd_secret_authority_exposure": 11,
+      "cicd_secret_exfiltration_path": 11,
       "cicd_self_hosted_runner_exposure": 1,
-      "cicd_unpinned_action": 4,
-      "cicd_untrusted_checkout": 1
+      "cicd_step_summary_exfiltration": 1,
+      "cicd_suspicious_remote_execution": 1,
+      "cicd_trigger_abuse": 12,
+      "cicd_unpinned_action": 6,
+      "cicd_untrusted_artifact_execution": 1,
+      "cicd_untrusted_checkout": 1,
+      "cicd_workflow_persistence": 1
     },
     "by_rule_id": {
+      "cicd_action_supply_chain_exfiltration": 1,
+      "cicd_concurrency_toctou": 1,
+      "cicd_encoded_payload_execution": 1,
+      "cicd_environment_protection_bypass": 1,
+      "cicd_malware_signature": 1,
+      "cicd_oidc_trust_exposure": 4,
+      "cicd_reusable_workflow_injection": 1,
+      "cicd_secret_exfiltration_path": 11,
       "cicd_self_hosted_runner_exposure": 1,
-      "cicd_unpinned_action": 4,
-      "cordyceps_artifact_poisoning": 2,
-      "cordyceps_auth_logic_error": 7,
+      "cicd_step_summary_exfiltration": 1,
+      "cicd_suspicious_remote_execution": 1,
+      "cicd_trigger_abuse": 12,
+      "cicd_unpinned_action": 6,
+      "cicd_untrusted_artifact_execution": 1,
+      "cicd_workflow_persistence": 1,
+      "cloud_control": 1,
+      "cordyceps_artifact_poisoning": 3,
+      "cordyceps_auth_logic_error": 17,
       "cordyceps_code_injection": 3,
-      "cordyceps_command_injection": 1,
-      "cordyceps_cross_workflow_privilege_escalation": 2,
-      "cordyceps_secret_authority_exposure": 2,
+      "cordyceps_command_injection": 2,
+      "cordyceps_cross_workflow_privilege_escalation": 3,
+      "cordyceps_secret_authority_exposure": 5,
       "cordyceps_untrusted_checkout": 1,
+      "network_egress": 1,
       "package_publish": 2,
-      "release_publish": 1,
+      "release_publish": 2,
       "secrets_inherit": 1
     },
     "by_severity": {
-      "HIGH": 22,
-      "LOW": 1,
-      "MEDIUM": 4
+      "CRITICAL": 27,
+      "HIGH": 50,
+      "LOW": 2,
+      "MEDIUM": 6
     },
     "by_path": {
-      ".github/workflows/cordyceps-artifact-consumer.yml": 5,
+      ".github/workflows/action-supply-chain-exfiltration.yml": 5,
+      ".github/workflows/artifact-cache-poisoning.yml": 4,
+      ".github/workflows/concurrency-toctou.yml": 4,
+      ".github/workflows/cordyceps-artifact-consumer.yml": 6,
       ".github/workflows/cordyceps-artifact-producer.yml": 5,
-      ".github/workflows/cordyceps-broken-authorization.yml": 2,
+      ".github/workflows/cordyceps-broken-authorization.yml": 4,
       ".github/workflows/cordyceps-code-injection.yml": 5,
-      ".github/workflows/cordyceps-command-injection.yml": 2,
-      ".github/workflows/reusable-untrusted-caller.yml": 4,
-      ".github/workflows/secret-authority-exposure.yml": 3,
-      ".github/workflows/self-hosted-runner-exposure.yml": 1
+      ".github/workflows/cordyceps-command-injection.yml": 3,
+      ".github/workflows/environment-protection-bypass.yml": 3,
+      ".github/workflows/oidc-trust-exposure.yml": 3,
+      ".github/workflows/reusable-untrusted-caller.yml": 5,
+      ".github/workflows/reusable-workflow-injection.yml": 1,
+      ".github/workflows/secret-authority-exposure.yml": 4,
+      ".github/workflows/secret-exfiltration.yml": 10,
+      ".github/workflows/self-hosted-runner-exposure.yml": 1,
+      ".github/workflows/step-summary-exfiltration.yml": 9,
+      ".github/workflows/suspicious-workflow-execution.yml": 5,
+      ".github/workflows/trigger-abuse.yml": 5,
+      ".github/workflows/workflow-persistence.yml": 3
     }
   },
   "required_detections": [
@@ -135,6 +177,132 @@
       "risk": "MEDIUM",
       "expected_min_findings": 1,
       "remediation": "Pin third-party actions to immutable commit SHAs."
+    },
+    {
+      "id": "WF-CORDYCEPS-TRIGGER-01",
+      "path": ".github/workflows/trigger-abuse.yml",
+      "rule_id": "cicd_trigger_abuse",
+      "class": "cicd_trigger_abuse",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Avoid privileged authority on low-trust or manually dispatched triggers; add actor/environment gates and least-privilege permissions."
+    },
+    {
+      "id": "WF-CORDYCEPS-ACTION-EXFIL-01",
+      "path": ".github/workflows/action-supply-chain-exfiltration.yml",
+      "rule_id": "cicd_action_supply_chain_exfiltration",
+      "class": "cicd_action_supply_chain_exfiltration",
+      "risk": "CRITICAL",
+      "expected_min_findings": 1,
+      "remediation": "Do not pass secrets to third-party actions unless pinned, reviewed, and isolated by least privilege."
+    },
+    {
+      "id": "WF-CORDYCEPS-SECRET-EXFIL-01",
+      "path": ".github/workflows/secret-exfiltration.yml",
+      "rule_id": "cicd_secret_exfiltration_path",
+      "class": "cicd_secret_exfiltration_path",
+      "risk": "CRITICAL",
+      "expected_min_findings": 1,
+      "remediation": "Keep secrets out of network calls, logs, artifacts, caches, and workflow outputs; rotate exposed tokens."
+    },
+    {
+      "id": "WF-CORDYCEPS-ARTIFACT-EXEC-01",
+      "path": ".github/workflows/artifact-cache-poisoning.yml",
+      "rule_id": "cicd_untrusted_artifact_execution",
+      "class": "cicd_untrusted_artifact_execution",
+      "risk": "CRITICAL",
+      "expected_min_findings": 1,
+      "remediation": "Do not execute artifacts or caches unless provenance and digest checks bind them to a trusted producer."
+    },
+    {
+      "id": "WF-CORDYCEPS-REMOTE-EXEC-01",
+      "path": ".github/workflows/suspicious-workflow-execution.yml",
+      "rule_id": "cicd_suspicious_remote_execution",
+      "class": "cicd_suspicious_remote_execution",
+      "risk": "CRITICAL",
+      "expected_min_findings": 1,
+      "remediation": "Pin and verify downloaded content before execution or replace remote bootstrap commands with reviewed source-controlled scripts."
+    },
+    {
+      "id": "WF-CORDYCEPS-ENCODED-01",
+      "path": ".github/workflows/suspicious-workflow-execution.yml",
+      "rule_id": "cicd_encoded_payload_execution",
+      "class": "cicd_encoded_payload_execution",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Remove encoded execution chains or replace them with reviewed scripts stored in source control."
+    },
+    {
+      "id": "WF-CORDYCEPS-MALWARE-01",
+      "path": ".github/workflows/suspicious-workflow-execution.yml",
+      "rule_id": "cicd_malware_signature",
+      "class": "cicd_malware_signature",
+      "risk": "CRITICAL",
+      "expected_min_findings": 1,
+      "remediation": "Remove malware-like command signatures and rotate exposed runner, repo, or deployment credentials."
+    },
+    {
+      "id": "WF-CICD-REUSABLE-BOUNDARY-01",
+      "path": ".github/workflows/reusable-untrusted-caller.yml",
+      "rule_id": "secrets_inherit",
+      "class": "cicd_reusable_workflow_boundary",
+      "risk": "LOW",
+      "expected_min_findings": 1,
+      "remediation": "Do not inherit caller secrets across a low-trust reusable workflow boundary without an explicit trust gate and bounded authority."
+    },
+    {
+      "id": "WF-CICD-REUSABLE-01",
+      "path": ".github/workflows/reusable-workflow-injection.yml",
+      "rule_id": "cicd_reusable_workflow_injection",
+      "class": "cicd_reusable_workflow_injection",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Treat workflow_call inputs as untrusted data and validate them before using them in run or script contexts."
+    },
+    {
+      "id": "WF-CICD-ENV-01",
+      "path": ".github/workflows/environment-protection-bypass.yml",
+      "rule_id": "cicd_environment_protection_bypass",
+      "class": "cicd_environment_protection_bypass",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Require protected environments, reviewer gates, and trusted branch conditions before deployment authority is reachable."
+    },
+    {
+      "id": "WF-CICD-OIDC-01",
+      "path": ".github/workflows/oidc-trust-exposure.yml",
+      "rule_id": "cicd_oidc_trust_exposure",
+      "class": "cicd_oidc_trust_exposure",
+      "risk": "CRITICAL",
+      "expected_min_findings": 1,
+      "remediation": "Limit id-token authority to trusted refs/workflows and bind cloud trust policies to exact repo, ref, and workflow claims."
+    },
+    {
+      "id": "WF-CICD-SUMMARY-01",
+      "path": ".github/workflows/step-summary-exfiltration.yml",
+      "rule_id": "cicd_step_summary_exfiltration",
+      "class": "cicd_step_summary_exfiltration",
+      "risk": "CRITICAL",
+      "expected_min_findings": 1,
+      "remediation": "Do not write secrets or sensitive outputs to step summaries or annotations; keep them out of UI-visible channels."
+    },
+    {
+      "id": "WF-CICD-PERSIST-01",
+      "path": ".github/workflows/workflow-persistence.yml",
+      "rule_id": "cicd_workflow_persistence",
+      "class": "cicd_workflow_persistence",
+      "risk": "CRITICAL",
+      "expected_min_findings": 1,
+      "remediation": "Block workflow-file writes and push authority from low-trust paths; isolate release automation from untrusted execution."
+    },
+    {
+      "id": "WF-CICD-TOCTOU-01",
+      "path": ".github/workflows/concurrency-toctou.yml",
+      "rule_id": "cicd_concurrency_toctou",
+      "class": "cicd_concurrency_toctou",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Use unique cache or artifact keys per trust boundary and avoid sharing mutable state across privileged and low-trust runs."
     }
   ],
   "defended_controls": [
@@ -147,6 +315,13 @@
       "path": ".github/workflows/defended-guarded-pr.yml",
       "native_findings_expected": 0,
       "reason": "Low-trust trigger is guarded and has read-only permission."
+    }
+  ],
+  "zero_native_helpers": [
+    {
+      "path": ".github/workflows/reusable-inherit-secrets.yml",
+      "native_findings_expected": 0,
+      "reason": "The reusable callee stays inert on its own; the low-trust caller carries the boundary risk when it uses secrets: inherit."
     }
   ],
   "minimum_contract": {

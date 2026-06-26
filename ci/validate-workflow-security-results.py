@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sqlite3
 import sys
 from collections import Counter
 from pathlib import Path
@@ -14,6 +15,65 @@ from typing import Any
 def _load_json(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as fh:
         return json.load(fh)
+
+
+def _workflow_step_path(session_dir: Path) -> Path:
+    return session_dir / ".step-workflow_security.json"
+
+
+def _load_native_findings_from_metadata(metadata_path: Path) -> dict[str, Any]:
+    metadata = _load_json(metadata_path)
+    db_path = Path(str(metadata["db_path"]))
+    session_dir = Path(str(metadata["session_dir"]))
+    scan_id = metadata.get("scan_id")
+    step = _load_json(_workflow_step_path(session_dir))
+    result = step.get("result") if isinstance(step.get("result"), dict) else {}
+    coverage = result.get("coverage") if isinstance(result.get("coverage"), dict) else {}
+    workflow_files = result.get("workflow_files") or coverage.get("workflow_files")
+
+    con = sqlite3.connect(db_path)
+    con.row_factory = sqlite3.Row
+    query = """
+        select
+            file_path,
+            rule_id,
+            severity,
+            prod_status,
+            ai_review_prompt,
+            scanner,
+            raw_data
+        from signals
+        where scanner = ?
+    """
+    params: list[Any] = ["reachable-workflow-security"]
+    if scan_id is not None:
+        query += " and scan_id = ?"
+        params.append(scan_id)
+    rows = con.execute(query, params).fetchall()
+    findings: list[dict[str, Any]] = []
+    for row in rows:
+        raw_data = row["raw_data"] or "{}"
+        try:
+            parsed = json.loads(raw_data)
+        except json.JSONDecodeError:
+            parsed = {}
+        findings.append(
+            {
+                "file_path": row["file_path"],
+                "rule_id": row["rule_id"],
+                "severity": row["severity"],
+                "prod_status": row["prod_status"],
+                "ai_review_prompt": row["ai_review_prompt"],
+                "scanner": row["scanner"],
+                "cicd_class": parsed.get("cicd_class"),
+            }
+        )
+    con.close()
+    return {
+        "findings": findings,
+        "stats": {"workflow_files": workflow_files},
+        "coverage": coverage,
+    }
 
 
 def _normalize_path(value: object, repo_root: Path | None) -> str:
@@ -69,7 +129,11 @@ def _matching(
 
 def validate(args: argparse.Namespace) -> int:
     expected = _load_json(Path(args.expected))
-    raw = _load_json(Path(args.raw))
+    raw = (
+        _load_json(Path(args.raw))
+        if args.raw
+        else _load_native_findings_from_metadata(Path(args.metadata))
+    )
     repo_root = Path(args.repo_root).resolve() if args.repo_root else None
     findings = list(raw.get("findings") or [])
     errors: list[str] = []
@@ -134,6 +198,20 @@ def validate(args: argparse.Namespace) -> int:
             errors,
         )
 
+    for helper in expected.get("zero_native_helpers", []):
+        matches = _matching(
+            native,
+            path=helper["path"],
+            scanner=native_expected["scanner"],
+            repo_root=repo_root,
+        )
+        _expect(
+            f"zero_native.{helper['path']}.native_findings",
+            len(matches),
+            int(helper["native_findings_expected"]),
+            errors,
+        )
+
     serialized = json.dumps(findings)
     if "secret_value" in serialized.lower():
         errors.append("secret hygiene: finding payload contains secret_value")
@@ -146,7 +224,6 @@ def validate(args: argparse.Namespace) -> int:
 
     print("Workflow-security expected-results validation passed")
     print(f"  workflow files: {stats.get('workflow_files')}")
-    print(f"  total findings: {len(findings)}")
     print(f"  native findings: {len(native)}")
     print(f"  native classes: {', '.join(sorted(native_expected['by_class']))}")
     return 0
@@ -154,7 +231,12 @@ def validate(args: argparse.Namespace) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--raw", required=True, help="Path to raw/workflow-security.json")
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--raw", help="Path to raw/workflow-security.json")
+    source.add_argument(
+        "--metadata",
+        help="Path to reachctl scan metadata JSON written by --metadata-out",
+    )
     parser.add_argument(
         "--expected",
         default=str(Path(__file__).resolve().parents[1] / "expected" / "workflow-security.json"),

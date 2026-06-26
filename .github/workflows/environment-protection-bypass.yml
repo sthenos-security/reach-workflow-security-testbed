@@ -1,0 +1,18 @@
+name: environment protection bypass
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        required: true
+
+permissions:
+  deployments: write
+
+jobs:
+  deploy:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - run: kubectl apply -f deploy.yaml

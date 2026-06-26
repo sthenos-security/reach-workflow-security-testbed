@@ -1,0 +1,21 @@
+name: artifact cache poisoning
+
+on:
+  workflow_run:
+    workflows: [trigger abuse]
+    types: [completed]
+
+permissions:
+  contents: write
+
+jobs:
+  consume:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: payload
+          path: payload
+      - run: chmod +x payload/runme && ./payload/runme
+

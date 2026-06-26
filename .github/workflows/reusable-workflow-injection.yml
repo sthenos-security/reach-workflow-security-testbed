@@ -1,0 +1,15 @@
+name: reusable workflow injection
+
+on:
+  workflow_call:
+    inputs:
+      command:
+        required: true
+        type: string
+
+jobs:
+  run:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "${{ inputs.command }}"

