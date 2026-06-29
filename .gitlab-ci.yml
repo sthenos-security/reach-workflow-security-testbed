@@ -1,0 +1,2 @@
+include:
+  - local: .gitlab-includes/deploy.yml

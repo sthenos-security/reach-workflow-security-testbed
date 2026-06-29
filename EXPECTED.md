@@ -14,16 +14,16 @@ Golden baseline:
 
 | Baseline dimension | Expected |
 |---|---:|
-| Workflow fixture files | 22 |
-| Native-positive workflow files | 19 |
-| Zero-native fixture files | 3 |
-| Native REACHABLE workflow-security findings | 84 |
-| Critical native findings | 26 |
-| High-risk native findings | 50 |
-| Medium-risk native findings | 6 |
-| Low-risk native findings | 2 |
+| Workflow fixture files | 39 |
+| Native-positive workflow files | 30 |
+| Zero-native fixture files | 10 |
+| Native REACHABLE workflow-security findings | 142 |
+| Critical native findings | 33 |
+| High-risk native findings | 93 |
+| Medium-risk native findings | 10 |
+| Low-risk native findings | 6 |
 | Required native classes | 23 |
-| Defended native-control files | 2 |
+| Defended native-control files | 4 |
 
 The exact optional-tool count can change as `zizmor` and `actionlint` evolve.
 For that reason, CI should validate the exact native REACHABLE contract,
@@ -33,7 +33,14 @@ corroborating evidence.
 The native workflow-security baseline excludes duplicate generic secret-scanner
 rows for workflow YAML. Workflow secret references such as
 `${{ secrets.NPM_TOKEN }}` are modeled as workflow authority evidence, not as
-literal leaked secret values.
+literal leaked secret values. Path-backed findings are validated from persisted
+workflow review payload when the DB raw-data copy is size-capped.
+
+The Poutine-derived and Scorecard-derived fixtures are original synthetic
+benchmark cases based on the accepted REACHABLE coverage-gap list. They are not
+copied from upstream Poutine or Scorecard test code, and each positive case is
+expected to be useful only when REACHABLE can connect a low-trust source,
+workflow edges, authorities, and a sink.
 
 | Required class | Risk | Expected evidence | Remediation guidance |
 |---|---|---|---|
@@ -61,18 +68,42 @@ literal leaked secret values.
 | `cicd_workflow_persistence` | Workflow execution can establish a durable CI/CD backdoor. | Low-trust workflow writes `.github/workflows/*` or pushes workflow changes. | Block workflow-file writes and push authority from low-trust paths and isolate release automation. |
 | `cicd_concurrency_toctou` | Mutable shared workflow state can win a race into privileged consumption. | Shared `concurrency:` group combined with shared cache/artifact state near privileged sinks. | Use unique cache/artifact keys per trust boundary and avoid shared mutable state across privileged and low-trust runs. |
 
+## Poutine and Scorecard Gap Fixtures
+
+| Fixture | Gap | Expected class |
+|---|---|---|
+| `.github/workflows/scorecard-dangerous-script-injection.yml` | Dangerous workflow script injection from untrusted PR metadata into shell. | `cicd_command_injection` |
+| `.github/workflows/scorecard-default-write-token.yml` | Risky external trigger with inherited/default token authority and no local gate. | `cicd_auth_logic_error`, `cicd_trigger_abuse` |
+| `.github/workflows/scorecard-token-permission-matrix.yml` | Read-only and SARIF-only controls stay non-path evidence while job-level package write reaches package publish. | `cicd_secret_authority_exposure` with `explicit_sensitive_write` and `packages` evidence |
+| `.github/workflows/scorecard-untrusted-checkout-pr-head.yml` | Privileged workflow checks out pull-request head code. | `cicd_untrusted_checkout` |
+| `.github/workflows/scorecard-build-component-posture-context.yml` | Actions, containers, remote downloads, signed-release/provenance, SAST, dependency-update, SBOM, packaging, and branch context attached to a real release path. | `cicd_secret_authority_exposure` with build-component and posture evidence |
+| `.github/workflows/scorecard-pinned-dependencies-download-execute.yml` | Remote bootstrap download-execute reaches release authority without checksum, signature, or provenance binding. | `cicd_secret_authority_exposure` with `download_execute_without_integrity` component evidence |
+| `.gitlab-ci.yml` + `.gitlab-includes/deploy.yml` | Local GitLab include traversal from parent pipeline into included deploy job. | `cicd_secret_authority_exposure` attributed to the included deploy file |
+| `.github/workflows/poutine-all-secrets-exposure.yml` | Wildcard/all-secrets object exposure on a low-trust path. | `cicd_secret_authority_exposure` |
+| `.github/workflows/poutine-debug-logging-exposure.yml` | Debug logging as a UI-visible secret exposure amplifier. | `cicd_step_summary_exfiltration`, `cicd_secret_exfiltration_path` |
+| `.github/workflows/poutine-malformed-if-fail-open.yml` | Malformed authorization `if:` guard in front of release authority. | `cicd_auth_logic_error`, `cicd_secret_authority_exposure` |
+| `.github/workflows/poutine-bot-auto-merge-confused-deputy.yml` | Bot identity trusted as auto-merge authorization without dependency-source provenance. | `cicd_auth_logic_error`, `cicd_untrusted_checkout` |
+
 ## Defended Controls
 
 | Fixture | Expected result | Why |
 |---|---|---|
 | `.github/workflows/defended-internal-release.yml` | No Cordyceps finding expected from native rules. | Internal `push` trigger, read-only permissions, SHA-pinned action, no low-trust entry. |
 | `.github/workflows/defended-guarded-pr.yml` | No auth-logic finding expected. | Low-trust trigger is guarded by actor/association checks and uses read-only permissions. |
+| `.github/workflows/defended-explicit-readonly-token.yml` | No native finding expected. | Low-trust trigger is guarded, permissions are explicit read-only, and no release, package, checkout, or secret sink is present. |
+| `.github/workflows/defended-untrusted-checkout.yml` | No native finding expected. | Low-trust trigger is guarded, permissions are read-only, and checkout stays on the trusted base boundary with a SHA-pinned action. |
+| `.github/workflows/defended-verified-download-execute.yml` | No native finding expected. | Remote content is checksum-verified before execution and the workflow has read-only token permissions. |
 
 ## Zero-Native Helper
 
 | Fixture | Expected result | Why |
 |---|---|---|
 | `.github/workflows/reusable-inherit-secrets.yml` | No native finding expected on the callee by itself. | The reusable callee is inert on its own; the low-trust caller carries the boundary risk when it invokes the callee with `secrets: inherit`. |
+| `azure-pipelines.yml` | No native finding expected. | Azure Pipelines is inventory-only until source-to-sink semantics are fixture-proven. |
+| `.tekton/pipeline.yaml` | No native finding expected. | Tekton is inventory-only until source-to-sink semantics are fixture-proven. |
+| `.gitlab-ci.yml` | No native finding expected on the root include file. | The source-to-sink finding is attributed to `.gitlab-includes/deploy.yml`. |
+| `.github/workflows/defended-sarif-only-token.yml` | No native finding expected. | SARIF upload uses security-events write only, read contents, and a SHA-pinned upload action. |
+| `.github/workflows/defended-verified-download-execute.yml` | No native finding expected. | Remote content is checksum-verified before execution and the workflow has read-only token permissions. |
 
 ## Minimum Scanner Assertions
 
@@ -82,7 +113,9 @@ The workflow-security lab should prove:
 - exact native rule, severity, and path counts match
   `expected/workflow-security.json`
 - `prod_status` remains `PRODUCTION` for workflow-security findings
-- workflow-security findings are routed to `workflow_security_review`
+- path-backed workflow findings are routed to `workflow_security_review`
+- non-path native/tool candidates stay out of workflow AI review unless graph
+  correlation attaches `WorkflowPath` proof
 - scan-plan generic exclusions for `.github` do not demote workflow findings as
   noise
 - zero-native helper and defended fixtures remain clean
@@ -106,8 +139,8 @@ Expected success output:
 
 ```text
 Workflow-security expected-results validation passed
-  workflow files: 22
-  native findings: 84
+  workflow files: 39
+  native findings: 142
 ```
 
 See [expected/workflow-security.json](expected/workflow-security.json) for the

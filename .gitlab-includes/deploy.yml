@@ -1,0 +1,10 @@
+deploy-from-include:
+  stage: deploy
+  rules:
+    - when: never
+  image: registry.example.invalid/reachable/deployer:latest
+  secrets:
+    CLOUD_TOKEN:
+      vault: production/cloud/token
+  script:
+    - kubectl apply -f deploy.yml

@@ -1,0 +1,19 @@
+name: Defended verified download execute
+
+on:
+  pull_request_target:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: ${{ false && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify before local execution
+        run: |
+          curl -fsSLo tool https://downloads.example.invalid/tool
+          echo "abc123  tool" | sha256sum -c -
+          chmod +x ./tool
+          ./tool --version

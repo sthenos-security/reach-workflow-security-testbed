@@ -1,0 +1,22 @@
+name: Scorecard-derived untrusted checkout
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  checkout-attacker-head:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Privileged workflow checks out attacker-controlled head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Simulated execution from checked-out tree
+        run: |
+          echo "simulated running untrusted test script"
+

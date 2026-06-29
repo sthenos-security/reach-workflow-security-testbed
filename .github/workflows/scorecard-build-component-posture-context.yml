@@ -1,0 +1,23 @@
+name: Scorecard Build Component Posture Context
+
+on: pull_request_target
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: ${{ false && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    container: ghcr.io/reachable-testbed/releaser:latest
+    steps:
+      - uses: docker/build-push-action@v6
+      - uses: third-party/release-action@v1
+      - uses: github/dependency-review-action@0123456789abcdef0123456789abcdef01234567
+      - run: |
+          curl -fsSL https://downloads.example.invalid/bootstrap.sh | bash
+          cosign verify ghcr.io/reachable-testbed/app@sha256:abcd
+          gh attestation verify dist/app.tgz
+          semgrep ci
+          syft packages dir:. -o spdx-json
+          gh release create v1 dist/*

@@ -19,16 +19,16 @@ proof target is:
 
 | Dimension | Expected |
 |---|---:|
-| Workflow fixture files | 22 |
-| Native-positive workflow files | 19 |
-| Zero-native fixture files | 3 |
-| Native REACHABLE workflow-security findings | 84 |
-| Critical native findings | 26 |
-| High-risk native findings | 50 |
-| Medium-risk native findings | 6 |
-| Low-risk native findings | 2 |
+| Workflow fixture files | 39 |
+| Native-positive workflow files | 30 |
+| Zero-native fixture files | 10 |
+| Native REACHABLE workflow-security findings | 142 |
+| Critical native findings | 33 |
+| High-risk native findings | 93 |
+| Medium-risk native findings | 10 |
+| Low-risk native findings | 6 |
 | Required risk classes | 23 |
-| Defended native-control files | 2 |
+| Defended native-control files | 4 |
 
 Optional tools such as `zizmor` and `actionlint` may add corroborating rows.
 The stable validation contract is the exact native REACHABLE finding set, the
@@ -36,12 +36,13 @@ required class detections, and the zero-native fixture paths documented in
 `expected/workflow-security.json`.
 The native baseline intentionally excludes duplicate generic secret-scanner rows
 for workflow YAML; workflow secret references are validated as workflow
-authority evidence.
+authority evidence. Path-backed findings are validated from persisted workflow
+review payload when the DB raw-data copy is size-capped.
 
 ## Safety Contract
 
-- Every intentionally vulnerable job is guarded with `if: ${{ false }}` so it
-  cannot execute in GitHub Actions.
+- Every intentionally vulnerable GitHub job is guarded with `if: ${{ false }}`
+  and GitLab jobs use inert rules such as `when: never`.
 - Publishing, deployment, and secret-use examples are inert simulations. They
   use `echo` or disabled jobs, not real package, release, or cloud operations.
 - No real secrets are stored in this repository.
@@ -74,7 +75,29 @@ security surface, separate from application source code and package inventory.
 | Step summary exfiltration | `.github/workflows/step-summary-exfiltration.yml` | `cicd_step_summary_exfiltration` |
 | Workflow persistence | `.github/workflows/workflow-persistence.yml` | `cicd_workflow_persistence` |
 | Concurrency TOCTOU | `.github/workflows/concurrency-toctou.yml` | `cicd_concurrency_toctou` |
-| Defended controls | `.github/workflows/defended-internal-release.yml` and `.github/workflows/defended-guarded-pr.yml` | no Cordyceps finding expected |
+| Poutine-derived all-secrets exposure | `.github/workflows/poutine-all-secrets-exposure.yml` | `cicd_secret_authority_exposure` |
+| Poutine-derived debug logging exposure | `.github/workflows/poutine-debug-logging-exposure.yml` | `cicd_step_summary_exfiltration`, `cicd_secret_exfiltration_path` |
+| Poutine-derived malformed `if:` fail-open | `.github/workflows/poutine-malformed-if-fail-open.yml` | `cicd_auth_logic_error`, `cicd_secret_authority_exposure` |
+| Poutine-derived bot auto-merge confused deputy | `.github/workflows/poutine-bot-auto-merge-confused-deputy.yml` | `cicd_auth_logic_error`, `cicd_untrusted_checkout` |
+| Scorecard-derived dangerous workflow script | `.github/workflows/scorecard-dangerous-script-injection.yml` | `cicd_command_injection` |
+| Scorecard-derived default token authority | `.github/workflows/scorecard-default-write-token.yml` | `cicd_auth_logic_error`, `cicd_trigger_abuse` |
+| Scorecard-derived token permission matrix | `.github/workflows/scorecard-token-permission-matrix.yml` | `cicd_secret_authority_exposure` with explicit permission-state evidence |
+| Scorecard-derived untrusted checkout | `.github/workflows/scorecard-untrusted-checkout-pr-head.yml` | `cicd_untrusted_checkout` |
+| Scorecard-derived build component and posture context | `.github/workflows/scorecard-build-component-posture-context.yml` | `cicd_secret_authority_exposure` with build-component, dependency-update, SBOM, and posture evidence |
+| Scorecard-derived pinned dependency download-execute | `.github/workflows/scorecard-pinned-dependencies-download-execute.yml` | `cicd_secret_authority_exposure` with unverified download-execute component evidence |
+| GitLab local include traversal | `.gitlab-ci.yml` including `.gitlab-includes/deploy.yml` | `cicd_secret_authority_exposure` attributed to the included deploy file |
+| Inventory-only Azure/Tekton adapters | `azure-pipelines.yml` and `.tekton/pipeline.yaml` | no native finding expected until source-to-sink semantics are fixture-proven |
+| Defended controls | `.github/workflows/defended-internal-release.yml`, `.github/workflows/defended-guarded-pr.yml`, `.github/workflows/defended-explicit-readonly-token.yml`, `.github/workflows/defended-untrusted-checkout.yml`, and `.github/workflows/defended-verified-download-execute.yml` | no native finding expected |
+
+## Prior-Art Benchmark Notes
+
+The Poutine-derived and Scorecard-derived fixtures are original synthetic
+workflows built from the accepted REACHABLE coverage-gap list. They are
+benchmark cases for source-to-sink graph proof and detector coverage; no
+upstream Poutine or Scorecard test code is copied into this repository.
+The bot auto-merge fixture uses inert simulated merge commands and models bot
+identity as an insufficient trust boundary when dependency-source provenance is
+not proven.
 
 ## How To Validate
 
@@ -98,6 +121,9 @@ Expected result:
   subclasses
 - workflow-security findings remain production/security-relevant even though
   the files are under `.github/workflows`
+- only `workflow-path:*` findings enter `workflow_security_review`; non-path
+  native/tool candidates stay out of AI review and cannot become `REACHABLE`
+  without source-to-sink graph proof
 - optional tool health for `zizmor` and `actionlint` is reported separately from
   native coverage
 - zero-native helper and defended fixtures remain clean
@@ -114,8 +140,14 @@ pattern:
 - avoid `pull_request_target` for untrusted code paths unless authorization
   gates, checkout boundaries, and permissions are explicit
 - keep release/package/cloud authority out of low-trust workflow paths
+- declare explicit least-privilege token permissions on external triggers
 - verify artifact provenance or digest before privileged consumption
 - avoid `secrets: inherit` unless caller trust is explicit and bounded
+- pass only explicitly scoped secrets, never wildcard secret objects
+- keep secrets out of debug logs, annotations, and UI-visible channels
+- treat bot identity as metadata, not as dependency-source provenance or merge
+  authorization by itself
+- make authorization `if:` expressions syntactically valid and fail closed
 - pin third-party actions to immutable commit SHAs
 - avoid self-hosted runners for untrusted external events
 

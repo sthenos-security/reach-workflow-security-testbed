@@ -35,11 +35,15 @@ def _load_native_findings_from_metadata(metadata_path: Path) -> dict[str, Any]:
     con.row_factory = sqlite3.Row
     query = """
         select
+            finding_id,
             file_path,
             rule_id,
             severity,
+            app_reachability,
             prod_status,
             ai_review_prompt,
+            requires_ai_review,
+            ai_review_payload,
             scanner,
             raw_data
         from signals
@@ -57,15 +61,21 @@ def _load_native_findings_from_metadata(metadata_path: Path) -> dict[str, Any]:
             parsed = json.loads(raw_data)
         except json.JSONDecodeError:
             parsed = {}
+        payload = _json_dict(row["ai_review_payload"])
         findings.append(
             {
+                "finding_id": row["finding_id"],
                 "file_path": row["file_path"],
                 "rule_id": row["rule_id"],
                 "severity": row["severity"],
+                "app_reachability": row["app_reachability"],
                 "prod_status": row["prod_status"],
                 "ai_review_prompt": row["ai_review_prompt"],
+                "requires_ai_review": row["requires_ai_review"],
                 "scanner": row["scanner"],
-                "cicd_class": parsed.get("cicd_class"),
+                "ai_review_payload": payload,
+                "cicd_class": parsed.get("cicd_class") or _payload_cicd_class(row["rule_id"], payload),
+                "evidence": _finding_evidence(parsed, payload),
             }
         )
     con.close()
@@ -74,6 +84,73 @@ def _load_native_findings_from_metadata(metadata_path: Path) -> dict[str, Any]:
         "stats": {"workflow_files": workflow_files},
         "coverage": coverage,
     }
+
+
+def _json_dict(value: object) -> dict[str, Any]:
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str) and value.strip():
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
+    return {}
+
+
+def _payload_cicd_class(rule_id: object, payload: dict[str, Any]) -> str | None:
+    evidence = payload.get("evidence") if isinstance(payload.get("evidence"), dict) else {}
+    sink = str(evidence.get("sink_operation") or evidence.get("workflow_call") or rule_id or "")
+    if sink == "workflow_ui_log":
+        return "cicd_step_summary_exfiltration"
+    if sink == "debug_log":
+        return "cicd_secret_exfiltration_path"
+    if sink == "network_egress" and "*" in set(evidence.get("secret_names") or []):
+        return "cicd_secret_exfiltration_path"
+    if sink == "shell_execution":
+        if _has_reusable_input_context(evidence):
+            return "cicd_reusable_workflow_injection"
+        return "cicd_command_injection"
+    if sink == "evaluated_script_context":
+        if _has_reusable_input_context(evidence):
+            return "cicd_reusable_workflow_injection"
+        return "cicd_code_injection"
+    if sink == "checkout_ref":
+        return "cicd_untrusted_checkout"
+    if sink == "default_write_permissions":
+        return "cicd_trigger_abuse"
+    if sink == "pull_request_merge":
+        return "cicd_auth_logic_error"
+    if sink in {"package_publish", "container_publish", "release_publish", "deploy", "cloud_control", "network_egress"}:
+        return "cicd_secret_authority_exposure"
+    if "secrets" in sink:
+        return "cicd_reusable_workflow_boundary"
+    return None
+
+
+def _has_reusable_input_context(evidence: dict[str, Any]) -> bool:
+    return any(str(context).startswith("inputs.") for context in evidence.get("untrusted_contexts") or [])
+
+
+def _finding_evidence(raw_data: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
+    raw_evidence = raw_data.get("evidence") if isinstance(raw_data.get("evidence"), dict) else {}
+    if raw_evidence:
+        return raw_evidence
+    payload_evidence = payload.get("evidence") if isinstance(payload.get("evidence"), dict) else {}
+    return payload_evidence
+
+
+def _evidence_for(finding: dict[str, Any]) -> dict[str, Any]:
+    evidence = finding.get("evidence")
+    if isinstance(evidence, dict):
+        return evidence
+    raw_data = finding.get("raw_data")
+    if isinstance(raw_data, dict) and isinstance(raw_data.get("evidence"), dict):
+        return raw_data["evidence"]
+    payload = finding.get("ai_review_payload")
+    if isinstance(payload, dict) and isinstance(payload.get("evidence"), dict):
+        return payload["evidence"]
+    return {}
 
 
 def _normalize_path(value: object, repo_root: Path | None) -> str:
@@ -102,6 +179,16 @@ def _count(findings: list[dict[str, Any]], key: str, repo_root: Path | None = No
 def _expect(label: str, actual: Any, expected: Any, errors: list[str]) -> None:
     if actual != expected:
         errors.append(f"{label}: expected {expected!r}, got {actual!r}")
+
+
+def _is_workflow_path_finding(finding: dict[str, Any]) -> bool:
+    return str(finding.get("id") or finding.get("finding_id") or "").startswith("workflow-path:")
+
+
+def _expected_ai_review_prompt(finding: dict[str, Any], expected: dict[str, Any]) -> str | None:
+    if _is_workflow_path_finding(finding):
+        return expected["minimum_contract"]["path_ai_review_prompt"]
+    return expected["minimum_contract"].get("candidate_ai_review_prompt")
 
 
 def _matching(
@@ -154,6 +241,54 @@ def validate(args: argparse.Namespace) -> int:
     _expect("native.by_rule_id", _count(native, "rule_id"), native_expected["by_rule_id"], errors)
     _expect("native.by_severity", _count(native, "severity"), native_expected["by_severity"], errors)
     _expect("native.by_path", _count(native, "file_path", repo_root), native_expected["by_path"], errors)
+    native_reachable_without_path = [
+        finding
+        for finding in native
+        if str(finding.get("app_reachability") or "") == "REACHABLE"
+        and not str(finding.get("id") or finding.get("finding_id") or "").startswith("workflow-path:")
+    ]
+    if native_reachable_without_path:
+        examples = [
+            f"{_normalize_path(finding.get('file_path'), repo_root)}:{finding.get('rule_id')}"
+            for finding in native_reachable_without_path[:5]
+        ]
+        errors.append(
+            "native.graph_contract: non-path native findings claimed REACHABLE: "
+            + ", ".join(examples)
+        )
+    candidate_review_requests = [
+        finding
+        for finding in native
+        if not _is_workflow_path_finding(finding)
+        and (
+            finding.get("ai_review_prompt")
+            or int(finding.get("requires_ai_review") or 0) != 0
+        )
+    ]
+    if candidate_review_requests:
+        examples = [
+            f"{_normalize_path(finding.get('file_path'), repo_root)}:{finding.get('rule_id')}"
+            for finding in candidate_review_requests[:5]
+        ]
+        errors.append(
+            "native.review_contract: non-path candidates requested workflow AI review: "
+            + ", ".join(examples)
+        )
+    path_review_missing = [
+        finding
+        for finding in native
+        if _is_workflow_path_finding(finding)
+        and finding.get("ai_review_prompt") != expected["minimum_contract"]["path_ai_review_prompt"]
+    ]
+    if path_review_missing:
+        examples = [
+            f"{_normalize_path(finding.get('file_path'), repo_root)}:{finding.get('rule_id')}"
+            for finding in path_review_missing[:5]
+        ]
+        errors.append(
+            "path.review_contract: workflow-path findings missing workflow AI review: "
+            + ", ".join(examples)
+        )
 
     for case in expected["required_detections"]:
         matches = _matching(
@@ -180,8 +315,79 @@ def validate(args: argparse.Namespace) -> int:
             _expect(
                 f"{case['id']}.ai_review_prompt",
                 finding.get("ai_review_prompt"),
-                expected["minimum_contract"]["ai_review_prompt"],
+                _expected_ai_review_prompt(finding, expected),
                 errors,
+            )
+
+    for case in expected.get("required_evidence", []):
+        matches = _matching(
+            native,
+            path=case["path"],
+            rule_id=case["rule_id"],
+            cicd_class=case["class"],
+            scanner=native_expected["scanner"],
+            repo_root=repo_root,
+        )
+        if not matches:
+            errors.append(f"{case['id']}: no matching finding for evidence validation")
+            continue
+        evidence = _evidence_for(matches[0])
+        component_names = {
+            str(component.get("name"))
+            for component in evidence.get("build_components") or []
+            if isinstance(component, dict) and component.get("name")
+        }
+        expected_components = set(case.get("build_component_names") or [])
+        if not expected_components <= component_names:
+            errors.append(
+                f"{case['id']}.build_component_names: expected {sorted(expected_components)!r} "
+                f"to be contained in {sorted(component_names)!r}"
+            )
+        component_risks = {
+            str(component.get("risk"))
+            for component in evidence.get("build_components") or []
+            if isinstance(component, dict) and component.get("risk")
+        }
+        expected_component_risks = set(case.get("build_component_risks") or [])
+        if not expected_component_risks <= component_risks:
+            errors.append(
+                f"{case['id']}.build_component_risks: expected {sorted(expected_component_risks)!r} "
+                f"to be contained in {sorted(component_risks)!r}"
+            )
+        if "download_execute_integrity_binding" in case:
+            integrity_values = {
+                bool(component.get("integrity_binding"))
+                for component in evidence.get("build_components") or []
+                if isinstance(component, dict)
+                and component.get("component_type") == "remote_download"
+                and "integrity_binding" in component
+            }
+            expected_integrity = bool(case["download_execute_integrity_binding"])
+            if expected_integrity not in integrity_values:
+                errors.append(
+                    f"{case['id']}.download_execute_integrity_binding: expected "
+                    f"{expected_integrity!r} in {sorted(integrity_values)!r}"
+                )
+        posture_context = {str(value) for value in evidence.get("posture_context") or []}
+        expected_posture = set(case.get("posture_context") or [])
+        if not expected_posture <= posture_context:
+            errors.append(
+                f"{case['id']}.posture_context: expected {sorted(expected_posture)!r} "
+                f"to be contained in {sorted(posture_context)!r}"
+            )
+        permission_states = {str(value) for value in evidence.get("permission_states") or []}
+        expected_permission_states = set(case.get("permission_states") or [])
+        if not expected_permission_states <= permission_states:
+            errors.append(
+                f"{case['id']}.permission_states: expected {sorted(expected_permission_states)!r} "
+                f"to be contained in {sorted(permission_states)!r}"
+            )
+        write_scopes = {str(value) for value in evidence.get("write_scopes") or []}
+        expected_write_scopes = set(case.get("write_scopes") or [])
+        if not expected_write_scopes <= write_scopes:
+            errors.append(
+                f"{case['id']}.write_scopes: expected {sorted(expected_write_scopes)!r} "
+                f"to be contained in {sorted(write_scopes)!r}"
             )
 
     for control in expected["defended_controls"]:

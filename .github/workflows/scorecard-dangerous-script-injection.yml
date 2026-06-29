@@ -1,0 +1,17 @@
+name: Scorecard-derived dangerous workflow script
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-title-to-shell:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Attacker-controlled PR title reaches shell script
+        run: |
+          echo "simulated release note: ${{ github.event.pull_request.title }}"

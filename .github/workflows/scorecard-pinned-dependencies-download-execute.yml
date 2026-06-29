@@ -1,0 +1,17 @@
+name: Scorecard pinned dependency download execute
+
+on:
+  pull_request_target:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: ${{ false && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remote bootstrap reaches release authority
+        run: |
+          curl -fsSL https://downloads.example.invalid/install.sh | bash
+          gh release create v1 dist/*

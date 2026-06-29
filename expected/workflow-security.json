@@ -4,23 +4,25 @@
   "verified_with_reachable": "local reach-core workflow_security implementation",
   "notes": [
     "All workflows are synthetic scanner fixtures.",
-    "Every intentionally vulnerable job is guarded with if: ${{ false }}.",
+    "Every intentionally vulnerable GitHub job is guarded with if: ${{ false }}; GitLab jobs use inert rules such as when: never.",
     "Native REACHABLE workflow-security findings are the exact validation contract for this lab.",
     "The native workflow-security baseline excludes duplicate generic secret-scanner rows for workflow YAML; workflow secret references are modeled as workflow authority evidence.",
-    "zizmor and actionlint findings are useful corroborating evidence but are not exact-count gates."
+    "zizmor and actionlint findings are useful corroborating evidence but are not exact-count gates.",
+    "Poutine-derived and Scorecard-derived fixtures are original synthetic benchmark cases for coverage gaps; no upstream Poutine or Scorecard test code is copied.",
+    "Bot auto-merge fixtures model bot identity as an insufficient trust boundary without dependency-source provenance."
   ],
-  "fixture_count": 22,
-  "native_positive_fixture_count": 19,
-  "zero_native_fixture_count": 3,
+  "fixture_count": 39,
+  "native_positive_fixture_count": 30,
+  "zero_native_fixture_count": 10,
   "native_expected": {
     "scanner": "reachable-workflow-security",
-    "total_findings": 84,
+    "total_findings": 142,
     "by_class": {
-      "cicd_action_supply_chain_exfiltration": 1,
+      "cicd_action_supply_chain_exfiltration": 3,
       "cicd_artifact_integrity_gap": 3,
-      "cicd_auth_logic_error": 17,
-      "cicd_code_injection": 3,
-      "cicd_command_injection": 2,
+      "cicd_auth_logic_error": 29,
+      "cicd_code_injection": 4,
+      "cicd_command_injection": 11,
       "cicd_concurrency_toctou": 1,
       "cicd_cross_workflow_poisoning": 3,
       "cicd_encoded_payload_execution": 1,
@@ -28,20 +30,21 @@
       "cicd_malware_signature": 1,
       "cicd_oidc_trust_exposure": 4,
       "cicd_reusable_workflow_boundary": 1,
-      "cicd_reusable_workflow_injection": 1,
-      "cicd_secret_authority_exposure": 11,
-      "cicd_secret_exfiltration_path": 10,
+      "cicd_reusable_workflow_injection": 2,
+      "cicd_secret_authority_exposure": 23,
+      "cicd_secret_exfiltration_path": 11,
       "cicd_self_hosted_runner_exposure": 1,
-      "cicd_step_summary_exfiltration": 1,
-      "cicd_suspicious_remote_execution": 1,
-      "cicd_trigger_abuse": 12,
-      "cicd_unpinned_action": 6,
+      "cicd_step_summary_exfiltration": 3,
+      "cicd_suspicious_remote_execution": 2,
+      "cicd_trigger_abuse": 21,
+      "cicd_unpinned_action": 10,
       "cicd_untrusted_artifact_execution": 1,
-      "cicd_untrusted_checkout": 1,
+      "cicd_untrusted_checkout": 5,
       "cicd_workflow_persistence": 1
     },
     "by_rule_id": {
-      "cicd_action_supply_chain_exfiltration": 1,
+      "checkout_ref": 2,
+      "cicd_action_supply_chain_exfiltration": 3,
       "cicd_concurrency_toctou": 1,
       "cicd_encoded_payload_execution": 1,
       "cicd_environment_protection_bypass": 1,
@@ -50,51 +53,68 @@
       "cicd_reusable_workflow_injection": 1,
       "cicd_secret_exfiltration_path": 10,
       "cicd_self_hosted_runner_exposure": 1,
-      "cicd_step_summary_exfiltration": 1,
-      "cicd_suspicious_remote_execution": 1,
-      "cicd_trigger_abuse": 12,
-      "cicd_unpinned_action": 6,
+      "cicd_step_summary_exfiltration": 2,
+      "cicd_suspicious_remote_execution": 2,
+      "cicd_trigger_abuse": 21,
+      "cicd_unpinned_action": 10,
       "cicd_untrusted_artifact_execution": 1,
       "cicd_workflow_persistence": 1,
       "cloud_control": 1,
       "cordyceps_artifact_poisoning": 3,
-      "cordyceps_auth_logic_error": 17,
+      "cordyceps_auth_logic_error": 28,
       "cordyceps_code_injection": 3,
       "cordyceps_command_injection": 2,
       "cordyceps_cross_workflow_privilege_escalation": 3,
-      "cordyceps_secret_authority_exposure": 5,
-      "cordyceps_untrusted_checkout": 1,
-      "network_egress": 1,
-      "package_publish": 2,
-      "release_publish": 2,
-      "secrets_inherit": 1
+      "cordyceps_secret_authority_exposure": 7,
+      "cordyceps_untrusted_checkout": 3,
+      "debug_log": 1,
+      "deploy": 2,
+      "evaluated_script_context": 1,
+      "network_egress": 4,
+      "package_publish": 3,
+      "pull_request_merge": 1,
+      "release_publish": 6,
+      "secrets_inherit": 1,
+      "shell_execution": 10,
+      "workflow_ui_log": 1
     },
     "by_severity": {
-      "CRITICAL": 26,
-      "HIGH": 50,
-      "LOW": 2,
-      "MEDIUM": 6
+      "CRITICAL": 33,
+      "HIGH": 93,
+      "LOW": 6,
+      "MEDIUM": 10
     },
     "by_path": {
       ".github/workflows/action-supply-chain-exfiltration.yml": 5,
       ".github/workflows/artifact-cache-poisoning.yml": 4,
-      ".github/workflows/concurrency-toctou.yml": 4,
+      ".github/workflows/concurrency-toctou.yml": 5,
       ".github/workflows/cordyceps-artifact-consumer.yml": 6,
-      ".github/workflows/cordyceps-artifact-producer.yml": 5,
-      ".github/workflows/cordyceps-broken-authorization.yml": 4,
-      ".github/workflows/cordyceps-code-injection.yml": 5,
-      ".github/workflows/cordyceps-command-injection.yml": 3,
-      ".github/workflows/environment-protection-bypass.yml": 3,
+      ".github/workflows/cordyceps-artifact-producer.yml": 6,
+      ".github/workflows/cordyceps-broken-authorization.yml": 5,
+      ".github/workflows/cordyceps-code-injection.yml": 6,
+      ".github/workflows/cordyceps-command-injection.yml": 4,
+      ".github/workflows/environment-protection-bypass.yml": 4,
       ".github/workflows/oidc-trust-exposure.yml": 3,
+      ".github/workflows/poutine-all-secrets-exposure.yml": 3,
+      ".github/workflows/poutine-bot-auto-merge-confused-deputy.yml": 8,
+      ".github/workflows/poutine-debug-logging-exposure.yml": 5,
+      ".github/workflows/poutine-malformed-if-fail-open.yml": 3,
       ".github/workflows/reusable-untrusted-caller.yml": 5,
-      ".github/workflows/reusable-workflow-injection.yml": 1,
+      ".github/workflows/reusable-workflow-injection.yml": 2,
+      ".github/workflows/scorecard-dangerous-script-injection.yml": 3,
+      ".github/workflows/scorecard-build-component-posture-context.yml": 8,
+      ".github/workflows/scorecard-default-write-token.yml": 3,
+      ".github/workflows/scorecard-pinned-dependencies-download-execute.yml": 5,
+      ".github/workflows/scorecard-token-permission-matrix.yml": 3,
+      ".github/workflows/scorecard-untrusted-checkout-pr-head.yml": 5,
       ".github/workflows/secret-authority-exposure.yml": 4,
       ".github/workflows/secret-exfiltration.yml": 9,
-      ".github/workflows/self-hosted-runner-exposure.yml": 1,
-      ".github/workflows/step-summary-exfiltration.yml": 9,
-      ".github/workflows/suspicious-workflow-execution.yml": 5,
-      ".github/workflows/trigger-abuse.yml": 5,
-      ".github/workflows/workflow-persistence.yml": 3
+      ".github/workflows/self-hosted-runner-exposure.yml": 2,
+      ".github/workflows/step-summary-exfiltration.yml": 10,
+      ".github/workflows/suspicious-workflow-execution.yml": 6,
+      ".github/workflows/trigger-abuse.yml": 6,
+      ".github/workflows/workflow-persistence.yml": 3,
+      ".gitlab-includes/deploy.yml": 1
     }
   },
   "required_detections": [
@@ -106,6 +126,15 @@
       "risk": "HIGH",
       "expected_min_findings": 1,
       "remediation": "Move untrusted event fields into quoted environment variables or validate and escape them before use."
+    },
+    {
+      "id": "WF-SCORECARD-SCRIPT-01",
+      "path": ".github/workflows/scorecard-dangerous-script-injection.yml",
+      "rule_id": "shell_execution",
+      "class": "cicd_command_injection",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Treat untrusted workflow event fields as data and keep them out of executable shell script bodies."
     },
     {
       "id": "WF-CORDYCEPS-CODE-01",
@@ -124,6 +153,69 @@
       "risk": "HIGH",
       "expected_min_findings": 1,
       "remediation": "Add explicit authorization gates and reduce write/OIDC/package authority for low-trust triggers."
+    },
+    {
+      "id": "WF-SCORECARD-DEFAULT-PERM-01",
+      "path": ".github/workflows/scorecard-default-write-token.yml",
+      "rule_id": "cordyceps_auth_logic_error",
+      "class": "cicd_auth_logic_error",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Declare least-privilege permissions on externally reachable workflows and add a visible local authorization gate before release authority."
+    },
+    {
+      "id": "WF-SCORECARD-BUILD-CONTEXT-01",
+      "path": ".github/workflows/scorecard-build-component-posture-context.yml",
+      "rule_id": "release_publish",
+      "class": "cicd_secret_authority_exposure",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Keep build-component and posture context attached to real release paths without turning posture-only evidence into reachability."
+    },
+    {
+      "id": "WF-SCORECARD-TOKEN-MATRIX-01",
+      "path": ".github/workflows/scorecard-token-permission-matrix.yml",
+      "rule_id": "package_publish",
+      "class": "cicd_secret_authority_exposure",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Preserve read-only and SARIF-only controls while proving job-level package write authority reaches the package publish sink."
+    },
+    {
+      "id": "WF-SCORECARD-PINNED-DOWNLOAD-01",
+      "path": ".github/workflows/scorecard-pinned-dependencies-download-execute.yml",
+      "rule_id": "release_publish",
+      "class": "cicd_secret_authority_exposure",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Verify downloaded bootstrap content before execution or replace remote bootstrap with reviewed, pinned workflow dependencies."
+    },
+    {
+      "id": "WF-GITLAB-LOCAL-INCLUDE-01",
+      "path": ".gitlab-includes/deploy.yml",
+      "rule_id": "deploy",
+      "class": "cicd_secret_authority_exposure",
+      "risk": "LOW",
+      "expected_min_findings": 1,
+      "remediation": "Traverse local GitLab includes and keep included deploy authority connected to the parent pipeline source."
+    },
+    {
+      "id": "WF-POUTINE-MALFORMED-IF-01",
+      "path": ".github/workflows/poutine-malformed-if-fail-open.yml",
+      "rule_id": "cordyceps_auth_logic_error",
+      "class": "cicd_auth_logic_error",
+      "risk": "CRITICAL",
+      "expected_min_findings": 1,
+      "remediation": "Make authorization if expressions syntactically valid, test them, and fail closed before privileged authority is reachable."
+    },
+    {
+      "id": "WF-POUTINE-BOT-MERGE-01",
+      "path": ".github/workflows/poutine-bot-auto-merge-confused-deputy.yml",
+      "rule_id": "pull_request_merge",
+      "class": "cicd_auth_logic_error",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Do not treat bot identity as merge authorization; require trusted dependency provenance, review gates, and least-privilege merge authority."
     },
     {
       "id": "WF-CORDYCEPS-ARTIFACT-01",
@@ -153,6 +245,15 @@
       "remediation": "Remove secrets from low-trust triggers or require protected environments and least-privilege scoped tokens."
     },
     {
+      "id": "WF-POUTINE-ALL-SECRETS-01",
+      "path": ".github/workflows/poutine-all-secrets-exposure.yml",
+      "rule_id": "cordyceps_secret_authority_exposure",
+      "class": "cicd_secret_authority_exposure",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Avoid wildcard secret-object exposure; pass only explicitly scoped secrets to trusted, gated workflow paths."
+    },
+    {
       "id": "WF-CORDYCEPS-CHECKOUT-01",
       "path": ".github/workflows/cordyceps-artifact-producer.yml",
       "rule_id": "cordyceps_untrusted_checkout",
@@ -160,6 +261,15 @@
       "risk": "HIGH",
       "expected_min_findings": 1,
       "remediation": "Avoid checking out attacker-controlled head refs inside privileged workflows."
+    },
+    {
+      "id": "WF-SCORECARD-CHECKOUT-01",
+      "path": ".github/workflows/scorecard-untrusted-checkout-pr-head.yml",
+      "rule_id": "cordyceps_untrusted_checkout",
+      "class": "cicd_untrusted_checkout",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Do not checkout pull-request head refs in privileged workflows; inspect metadata or trusted base code instead."
     },
     {
       "id": "WF-CICD-RUNNER-01",
@@ -288,6 +398,33 @@
       "remediation": "Do not write secrets or sensitive outputs to step summaries or annotations; keep them out of UI-visible channels."
     },
     {
+      "id": "WF-CICD-SUMMARY-PATH-01",
+      "path": ".github/workflows/step-summary-exfiltration.yml",
+      "rule_id": "workflow_ui_log",
+      "class": "cicd_step_summary_exfiltration",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Keep workflow authority out of step summaries, annotations, and other UI-visible workflow log channels."
+    },
+    {
+      "id": "WF-POUTINE-DEBUG-LOG-01",
+      "path": ".github/workflows/poutine-debug-logging-exposure.yml",
+      "rule_id": "cicd_step_summary_exfiltration",
+      "class": "cicd_step_summary_exfiltration",
+      "risk": "CRITICAL",
+      "expected_min_findings": 1,
+      "remediation": "Keep secrets out of debug, annotation, and UI-visible log channels, especially when debug logging is enabled."
+    },
+    {
+      "id": "WF-POUTINE-DEBUG-PATH-01",
+      "path": ".github/workflows/poutine-debug-logging-exposure.yml",
+      "rule_id": "debug_log",
+      "class": "cicd_secret_exfiltration_path",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Do not enable debug logging on low-trust paths that can access secret authority; keep secret-bearing values out of debug channels."
+    },
+    {
       "id": "WF-CICD-PERSIST-01",
       "path": ".github/workflows/workflow-persistence.yml",
       "rule_id": "cicd_workflow_persistence",
@@ -306,6 +443,78 @@
       "remediation": "Use unique cache or artifact keys per trust boundary and avoid sharing mutable state across privileged and low-trust runs."
     }
   ],
+  "required_evidence": [
+    {
+      "id": "WF-SCORECARD-BUILD-CONTEXT-EVIDENCE-01",
+      "path": ".github/workflows/scorecard-build-component-posture-context.yml",
+      "rule_id": "release_publish",
+      "class": "cicd_secret_authority_exposure",
+      "build_component_names": [
+        "docker/build-push-action",
+        "downloads.example.invalid",
+        "github/dependency-review-action",
+        "ghcr.io/reachable-testbed/releaser:latest",
+        "third-party/release-action"
+      ],
+      "posture_context": [
+        "branch_policy_context",
+        "dependency_update_context",
+        "packaging_context",
+        "sbom_context",
+        "sast_context",
+        "signed_release_or_provenance"
+      ]
+    },
+    {
+      "id": "WF-GITLAB-LOCAL-INCLUDE-EVIDENCE-01",
+      "path": ".gitlab-includes/deploy.yml",
+      "rule_id": "deploy",
+      "class": "cicd_secret_authority_exposure",
+      "build_component_names": [
+        "registry.example.invalid/reachable/deployer:latest"
+      ],
+      "posture_context": []
+    },
+    {
+      "id": "WF-SCORECARD-TOKEN-MATRIX-EVIDENCE-01",
+      "path": ".github/workflows/scorecard-token-permission-matrix.yml",
+      "rule_id": "package_publish",
+      "class": "cicd_secret_authority_exposure",
+      "build_component_names": [],
+      "posture_context": [
+        "packaging_context",
+        "sast_context"
+      ],
+      "permission_states": [
+        "explicit_sensitive_write"
+      ],
+      "write_scopes": [
+        "packages"
+      ]
+    },
+    {
+      "id": "WF-SCORECARD-PINNED-DOWNLOAD-EVIDENCE-01",
+      "path": ".github/workflows/scorecard-pinned-dependencies-download-execute.yml",
+      "rule_id": "release_publish",
+      "class": "cicd_secret_authority_exposure",
+      "build_component_names": [
+        "downloads.example.invalid"
+      ],
+      "build_component_risks": [
+        "download_execute_without_integrity"
+      ],
+      "download_execute_integrity_binding": false,
+      "posture_context": [
+        "packaging_context"
+      ],
+      "permission_states": [
+        "explicit_sensitive_write"
+      ],
+      "write_scopes": [
+        "contents"
+      ]
+    }
+  ],
   "defended_controls": [
     {
       "path": ".github/workflows/defended-internal-release.yml",
@@ -316,6 +525,16 @@
       "path": ".github/workflows/defended-guarded-pr.yml",
       "native_findings_expected": 0,
       "reason": "Low-trust trigger is guarded and has read-only permission."
+    },
+    {
+      "path": ".github/workflows/defended-explicit-readonly-token.yml",
+      "native_findings_expected": 0,
+      "reason": "Low-trust trigger is guarded, permissions are explicit read-only, and no release, package, checkout, or secret sink is present."
+    },
+    {
+      "path": ".github/workflows/defended-untrusted-checkout.yml",
+      "native_findings_expected": 0,
+      "reason": "Low-trust trigger is guarded, permissions are read-only, and checkout stays on the trusted base boundary with a SHA-pinned action."
     }
   ],
   "zero_native_helpers": [
@@ -323,12 +542,38 @@
       "path": ".github/workflows/reusable-inherit-secrets.yml",
       "native_findings_expected": 0,
       "reason": "The reusable callee stays inert on its own; the low-trust caller carries the boundary risk when it uses secrets: inherit."
+    },
+    {
+      "path": "azure-pipelines.yml",
+      "native_findings_expected": 0,
+      "reason": "Azure Pipelines is inventory-only until source-to-sink semantics are fixture-proven."
+    },
+    {
+      "path": ".tekton/pipeline.yaml",
+      "native_findings_expected": 0,
+      "reason": "Tekton is inventory-only until source-to-sink semantics are fixture-proven."
+    },
+    {
+      "path": ".gitlab-ci.yml",
+      "native_findings_expected": 0,
+      "reason": "The root GitLab file only includes the local deploy pipeline; the source-to-sink finding is attributed to the included file."
+    },
+    {
+      "path": ".github/workflows/defended-sarif-only-token.yml",
+      "native_findings_expected": 0,
+      "reason": "SARIF upload uses only security-events write plus read contents and a SHA-pinned upload action."
+    },
+    {
+      "path": ".github/workflows/defended-verified-download-execute.yml",
+      "native_findings_expected": 0,
+      "reason": "Remote content is downloaded with explicit read-only permissions and checksum verification before local execution."
     }
   ],
   "minimum_contract": {
     "coverage_status": "complete",
     "workflow_security_prod_status": "PRODUCTION",
-    "ai_review_prompt": "workflow_security_review",
+    "path_ai_review_prompt": "workflow_security_review",
+    "candidate_ai_review_prompt": null,
     "raw_yaml_in_cloud_rollup": false,
     "real_secret_values": false
   }

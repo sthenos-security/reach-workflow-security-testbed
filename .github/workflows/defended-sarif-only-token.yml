@@ -1,0 +1,16 @@
+name: Defended SARIF Only Token
+
+on: pull_request_target
+
+permissions:
+  security-events: write
+  contents: read
+
+jobs:
+  upload:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: github/codeql-action/upload-sarif@0123456789abcdef0123456789abcdef01234567
+        with:
+          sarif_file: results.sarif

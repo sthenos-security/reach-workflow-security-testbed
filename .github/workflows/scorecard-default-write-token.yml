@@ -1,0 +1,15 @@
+name: Scorecard-derived default token authority
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  default-token-release-path:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Simulated release authority with inherited default token
+        run: |
+          echo "simulated release update for ${{ github.event.pull_request.head.ref }}"
+

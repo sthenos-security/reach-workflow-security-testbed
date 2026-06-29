@@ -1,0 +1,27 @@
+name: Poutine-derived bot auto-merge confused deputy
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bot-auto-merge:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bot-identity gate without dependency-source trust proof
+        if: ${{ github.actor_id == 49699333 || github.actor == 'renovate-bot' }}
+        run: |
+          echo "simulated trusting bot-authored dependency update"
+      - name: Checkout bot pull request head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Simulated privileged auto-merge
+        if: ${{ github.actor == 'dependabot[bot]' || github.actor == 'renovate[bot]' }}
+        run: |
+          gh pr merge --auto --squash "${{ github.event.pull_request.html_url }}"

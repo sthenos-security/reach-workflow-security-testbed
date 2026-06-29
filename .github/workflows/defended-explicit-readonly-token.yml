@@ -1,0 +1,18 @@
+name: Defended - explicit read-only token
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  metadata-only:
+    if: ${{ github.event.pull_request.author_association == 'MEMBER' || github.event.pull_request.author_association == 'OWNER' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Metadata-only review with explicit least privilege
+        run: |
+          echo "explicit read-only token; no release, package, or checkout sink"
+
