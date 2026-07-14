@@ -8,19 +8,20 @@
     "Native REACHABLE workflow-security findings are the exact validation contract for this lab.",
     "The native workflow-security baseline excludes duplicate generic secret-scanner rows for workflow YAML; workflow secret references are modeled as workflow authority evidence.",
     "zizmor and actionlint findings are useful corroborating evidence but are not exact-count gates.",
+    "Dashboard rollup regression fixtures keep raw workflow rows, grouped workflow rows, and reachable/path-backed rows distinct without publishing raw workflow YAML or AI prompt bodies.",
     "Poutine-derived and Scorecard-derived fixtures are original synthetic benchmark cases for coverage gaps; no upstream Poutine or Scorecard test code is copied.",
     "Bot auto-merge fixtures model bot identity as an insufficient trust boundary without dependency-source provenance."
   ],
-  "fixture_count": 39,
-  "native_positive_fixture_count": 30,
+  "fixture_count": 40,
+  "native_positive_fixture_count": 31,
   "zero_native_fixture_count": 10,
   "native_expected": {
     "scanner": "reachable-workflow-security",
-    "total_findings": 142,
+    "total_findings": 146,
     "by_class": {
       "cicd_action_supply_chain_exfiltration": 3,
       "cicd_artifact_integrity_gap": 3,
-      "cicd_auth_logic_error": 29,
+      "cicd_auth_logic_error": 30,
       "cicd_code_injection": 4,
       "cicd_command_injection": 11,
       "cicd_concurrency_toctou": 1,
@@ -28,15 +29,15 @@
       "cicd_encoded_payload_execution": 1,
       "cicd_environment_protection_bypass": 1,
       "cicd_malware_signature": 1,
-      "cicd_oidc_trust_exposure": 4,
+      "cicd_oidc_trust_exposure": 5,
       "cicd_reusable_workflow_boundary": 1,
       "cicd_reusable_workflow_injection": 2,
-      "cicd_secret_authority_exposure": 23,
-      "cicd_secret_exfiltration_path": 11,
+      "cicd_secret_authority_exposure": 27,
+      "cicd_secret_exfiltration_path": 5,
       "cicd_self_hosted_runner_exposure": 1,
-      "cicd_step_summary_exfiltration": 3,
+      "cicd_step_summary_exfiltration": 6,
       "cicd_suspicious_remote_execution": 2,
-      "cicd_trigger_abuse": 21,
+      "cicd_trigger_abuse": 22,
       "cicd_unpinned_action": 10,
       "cicd_untrusted_artifact_execution": 1,
       "cicd_untrusted_checkout": 5,
@@ -49,38 +50,38 @@
       "cicd_encoded_payload_execution": 1,
       "cicd_environment_protection_bypass": 1,
       "cicd_malware_signature": 1,
-      "cicd_oidc_trust_exposure": 4,
+      "cicd_oidc_trust_exposure": 5,
       "cicd_reusable_workflow_injection": 1,
-      "cicd_secret_exfiltration_path": 10,
+      "cicd_secret_exfiltration_path": 3,
       "cicd_self_hosted_runner_exposure": 1,
-      "cicd_step_summary_exfiltration": 2,
+      "cicd_step_summary_exfiltration": 4,
       "cicd_suspicious_remote_execution": 2,
-      "cicd_trigger_abuse": 21,
+      "cicd_trigger_abuse": 22,
       "cicd_unpinned_action": 10,
       "cicd_untrusted_artifact_execution": 1,
       "cicd_workflow_persistence": 1,
       "cloud_control": 1,
       "cordyceps_artifact_poisoning": 3,
-      "cordyceps_auth_logic_error": 28,
+      "cordyceps_auth_logic_error": 29,
       "cordyceps_code_injection": 3,
       "cordyceps_command_injection": 2,
       "cordyceps_cross_workflow_privilege_escalation": 3,
-      "cordyceps_secret_authority_exposure": 7,
+      "cordyceps_secret_authority_exposure": 8,
       "cordyceps_untrusted_checkout": 3,
-      "debug_log": 1,
+      "debug_log": 2,
       "deploy": 2,
       "evaluated_script_context": 1,
-      "network_egress": 4,
-      "package_publish": 3,
+      "network_egress": 5,
+      "package_publish": 4,
       "pull_request_merge": 1,
-      "release_publish": 6,
+      "release_publish": 7,
       "secrets_inherit": 1,
       "shell_execution": 10,
-      "workflow_ui_log": 1
+      "workflow_ui_log": 2
     },
     "by_severity": {
-      "CRITICAL": 33,
-      "HIGH": 93,
+      "CRITICAL": 30,
+      "HIGH": 100,
       "LOW": 6,
       "MEDIUM": 10
     },
@@ -93,6 +94,7 @@
       ".github/workflows/cordyceps-broken-authorization.yml": 5,
       ".github/workflows/cordyceps-code-injection.yml": 6,
       ".github/workflows/cordyceps-command-injection.yml": 4,
+      ".github/workflows/dashboard-rollup-regression.yml": 12,
       ".github/workflows/environment-protection-bypass.yml": 4,
       ".github/workflows/oidc-trust-exposure.yml": 3,
       ".github/workflows/poutine-all-secrets-exposure.yml": 3,
@@ -108,9 +110,9 @@
       ".github/workflows/scorecard-token-permission-matrix.yml": 3,
       ".github/workflows/scorecard-untrusted-checkout-pr-head.yml": 5,
       ".github/workflows/secret-authority-exposure.yml": 4,
-      ".github/workflows/secret-exfiltration.yml": 9,
+      ".github/workflows/secret-exfiltration.yml": 5,
       ".github/workflows/self-hosted-runner-exposure.yml": 2,
-      ".github/workflows/step-summary-exfiltration.yml": 10,
+      ".github/workflows/step-summary-exfiltration.yml": 6,
       ".github/workflows/suspicious-workflow-execution.yml": 6,
       ".github/workflows/trigger-abuse.yml": 6,
       ".github/workflows/workflow-persistence.yml": 3,
@@ -407,6 +409,15 @@
       "remediation": "Keep workflow authority out of step summaries, annotations, and other UI-visible workflow log channels."
     },
     {
+      "id": "WF-DASHBOARD-ROLLUP-01",
+      "path": ".github/workflows/dashboard-rollup-regression.yml",
+      "rule_id": "workflow_ui_log",
+      "class": "cicd_step_summary_exfiltration",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "Keep workflow dashboard rollups on structured counts and redacted evidence instead of publishing raw workflow YAML or prompt bodies."
+    },
+    {
       "id": "WF-POUTINE-DEBUG-LOG-01",
       "path": ".github/workflows/poutine-debug-logging-exposure.yml",
       "rule_id": "cicd_step_summary_exfiltration",
@@ -515,6 +526,57 @@
       ]
     }
   ],
+  "workflow_rollup_regressions": [
+    {
+      "id": "WF-DASHBOARD-ROLLUP-COUNTS-01",
+      "path": ".github/workflows/dashboard-rollup-regression.yml",
+      "native_findings_expected": 12,
+      "grouped_workflow_paths_expected": 1,
+      "reachable_findings_expected": 5,
+      "path_backed_findings_expected": 5,
+      "candidate_findings_expected": 7,
+      "raw_grouped_reachable_counts_must_be_distinct": true,
+      "by_class": {
+        "cicd_auth_logic_error": 1,
+        "cicd_oidc_trust_exposure": 1,
+        "cicd_secret_authority_exposure": 4,
+        "cicd_secret_exfiltration_path": 2,
+        "cicd_step_summary_exfiltration": 3,
+        "cicd_trigger_abuse": 1
+      },
+      "by_rule_id": {
+        "cicd_oidc_trust_exposure": 1,
+        "cicd_secret_exfiltration_path": 1,
+        "cicd_step_summary_exfiltration": 2,
+        "cicd_trigger_abuse": 1,
+        "cordyceps_auth_logic_error": 1,
+        "cordyceps_secret_authority_exposure": 1,
+        "debug_log": 1,
+        "network_egress": 1,
+        "package_publish": 1,
+        "release_publish": 1,
+        "workflow_ui_log": 1
+      },
+      "by_severity": {
+        "CRITICAL": 5,
+        "HIGH": 7
+      },
+      "by_reachability": {
+        "REACHABLE": 5,
+        "UNKNOWN": 7
+      }
+    }
+  ],
+  "dashboard_rollup_contract": {
+    "required": true,
+    "raw_workflow_yaml_published": false,
+    "raw_ai_prompt_published": false,
+    "native_tool_count_matches_native": true,
+    "raw_grouped_reachable_counts_distinct": true,
+    "reachable_row_count_matches_path_backed": true,
+    "review_pending_count_matches_path_backed": true,
+    "requires_triage_count_is_raw_minus_reachable": true
+  },
   "defended_controls": [
     {
       "path": ".github/workflows/defended-internal-release.yml",
@@ -575,6 +637,8 @@
     "path_ai_review_prompt": "workflow_security_review",
     "candidate_ai_review_prompt": null,
     "raw_yaml_in_cloud_rollup": false,
+    "raw_workflow_yaml_published": false,
+    "raw_ai_prompt_published": false,
     "real_secret_values": false
   }
 }

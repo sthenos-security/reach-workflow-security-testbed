@@ -21,6 +21,10 @@ def _workflow_step_path(session_dir: Path) -> Path:
     return session_dir / ".step-workflow_security.json"
 
 
+def _dashboard_data_path(session_dir: Path) -> Path:
+    return session_dir / "dashboard" / "data.json"
+
+
 def _load_native_findings_from_metadata(metadata_path: Path) -> dict[str, Any]:
     metadata = _load_json(metadata_path)
     db_path = Path(str(metadata["db_path"]))
@@ -83,6 +87,10 @@ def _load_native_findings_from_metadata(metadata_path: Path) -> dict[str, Any]:
         "findings": findings,
         "stats": {"workflow_files": workflow_files},
         "coverage": coverage,
+        "dashboard": _load_json(_dashboard_data_path(session_dir))
+        if _dashboard_data_path(session_dir).exists()
+        else {},
+        "metadata": metadata,
     }
 
 
@@ -212,6 +220,246 @@ def _matching(
             continue
         matches.append(finding)
     return matches
+
+
+def _int_or_none(value: object) -> int | None:
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.strip():
+        try:
+            return int(value)
+        except ValueError:
+            return None
+    return None
+
+
+def _workflow_rollup(raw: dict[str, Any]) -> dict[str, Any]:
+    if isinstance(raw.get("workflow_security_rollup"), dict):
+        return raw["workflow_security_rollup"]
+    if isinstance(raw.get("workflow_security"), dict):
+        return raw["workflow_security"]
+    dashboard = raw.get("dashboard") if isinstance(raw.get("dashboard"), dict) else {}
+    if isinstance(dashboard.get("workflow_security_rollup"), dict):
+        return dashboard["workflow_security_rollup"]
+    if isinstance(dashboard.get("workflow_security"), dict):
+        return dashboard["workflow_security"]
+    return {}
+
+
+def _first_count(mapping: dict[str, Any], *keys: str) -> int | None:
+    for key in keys:
+        value = _int_or_none(mapping.get(key))
+        if value is not None:
+            return value
+    return None
+
+
+def _validate_dashboard_rollup_contract(
+    raw: dict[str, Any],
+    expected: dict[str, Any],
+    native: list[dict[str, Any]],
+    native_expected: dict[str, Any],
+    errors: list[str],
+) -> None:
+    contract = expected.get("dashboard_rollup_contract")
+    if not isinstance(contract, dict):
+        return
+    rollup = _workflow_rollup(raw)
+    if not rollup:
+        if contract.get("required"):
+            errors.append(
+                "workflow_rollup: dashboard workflow_security_rollup missing; "
+                "run scan with --dashboard"
+            )
+        return
+
+    for field in ("raw_workflow_yaml_published", "raw_ai_prompt_published"):
+        if field in contract:
+            _expect(
+                f"workflow_rollup.{field}",
+                rollup.get(field),
+                contract[field],
+                errors,
+            )
+            summary = (
+                rollup.get("summary")
+                if isinstance(rollup.get("summary"), dict)
+                else {}
+            )
+            _expect(
+                f"workflow_rollup.summary.{field}",
+                summary.get(field),
+                contract[field],
+                errors,
+            )
+
+    by_tool = rollup.get("by_tool") if isinstance(rollup.get("by_tool"), dict) else {}
+    if contract.get("native_tool_count_matches_native", True):
+        _expect(
+            "workflow_rollup.by_tool.native",
+            _int_or_none(by_tool.get(native_expected["scanner"])),
+            len(native),
+            errors,
+        )
+
+    raw_count = _first_count(
+        rollup,
+        "raw_signal_count",
+        "workflow_row_count",
+        "signal_count",
+    )
+    grouped_count = _first_count(rollup, "grouped_signal_count", "row_count")
+    reachable_count = _first_count(rollup, "reachable_row_count", "reachable_count")
+    triage_count = _first_count(
+        rollup,
+        "requires_triage_count",
+        "unknown_workflow_exposure_count",
+    )
+    path_backed_count = _first_count(
+        rollup,
+        "path_backed_signal_count",
+        "path_backed_count",
+    )
+    review_pending_count = _first_count(
+        rollup,
+        "review_pending_count",
+        "pending_review_count",
+    )
+
+    if contract.get("reachable_row_count_matches_path_backed", True):
+        _expect(
+            "workflow_rollup.reachable_row_count",
+            reachable_count,
+            path_backed_count,
+            errors,
+        )
+    if contract.get("review_pending_count_matches_path_backed", True):
+        _expect(
+            "workflow_rollup.review_pending_count",
+            review_pending_count,
+            path_backed_count,
+            errors,
+        )
+    if (
+        contract.get("requires_triage_count_is_raw_minus_reachable", True)
+        and raw_count is not None
+        and reachable_count is not None
+    ):
+        _expect(
+            "workflow_rollup.requires_triage_count",
+            triage_count,
+            raw_count - reachable_count,
+            errors,
+        )
+    if contract.get("raw_grouped_reachable_counts_distinct", True):
+        values = {
+            "raw_signal_count": raw_count,
+            "grouped_signal_count": grouped_count,
+            "reachable_row_count": reachable_count,
+        }
+        if None not in values.values() and len(set(values.values())) != len(values):
+            errors.append(
+                "workflow_rollup.count_contract: raw workflow rows, grouped workflow rows, "
+                f"and reachable rows must stay distinct; got {values!r}"
+            )
+        if raw_count is not None and grouped_count is not None and raw_count < grouped_count:
+            errors.append(
+                "workflow_rollup.count_contract: raw workflow rows must be greater than "
+                f"or equal to grouped rows; got raw={raw_count}, grouped={grouped_count}"
+            )
+        if (
+            grouped_count is not None
+            and reachable_count is not None
+            and grouped_count <= reachable_count
+        ):
+            errors.append(
+                "workflow_rollup.count_contract: grouped workflow rows must stay above "
+                f"reachable rows; got grouped={grouped_count}, reachable={reachable_count}"
+            )
+
+
+def _validate_workflow_rollup_regressions(
+    expected: dict[str, Any],
+    native: list[dict[str, Any]],
+    native_expected: dict[str, Any],
+    repo_root: Path | None,
+    errors: list[str],
+) -> None:
+    for case in expected.get("workflow_rollup_regressions", []):
+        matches = _matching(
+            native,
+            path=case["path"],
+            scanner=native_expected["scanner"],
+            repo_root=repo_root,
+        )
+        _expect(
+            f"{case['id']}.native_findings",
+            len(matches),
+            int(case["native_findings_expected"]),
+            errors,
+        )
+        grouped_paths = {
+            _normalize_path(finding.get("file_path"), repo_root)
+            for finding in matches
+        }
+        _expect(
+            f"{case['id']}.grouped_workflow_paths",
+            len(grouped_paths),
+            int(case["grouped_workflow_paths_expected"]),
+            errors,
+        )
+        reachable = [
+            finding
+            for finding in matches
+            if str(finding.get("app_reachability") or "") == "REACHABLE"
+        ]
+        path_backed = [finding for finding in matches if _is_workflow_path_finding(finding)]
+        candidates = [finding for finding in matches if not _is_workflow_path_finding(finding)]
+        _expect(
+            f"{case['id']}.reachable_findings",
+            len(reachable),
+            int(case["reachable_findings_expected"]),
+            errors,
+        )
+        _expect(
+            f"{case['id']}.path_backed_findings",
+            len(path_backed),
+            int(case["path_backed_findings_expected"]),
+            errors,
+        )
+        _expect(
+            f"{case['id']}.candidate_findings",
+            len(candidates),
+            int(case["candidate_findings_expected"]),
+            errors,
+        )
+        if case.get("raw_grouped_reachable_counts_must_be_distinct"):
+            values = {
+                "native_findings": len(matches),
+                "grouped_workflow_paths": len(grouped_paths),
+                "reachable_findings": len(reachable),
+            }
+            if len(set(values.values())) != len(values):
+                errors.append(
+                    f"{case['id']}.count_contract: counts must stay distinct; got {values!r}"
+                )
+        for key in ("by_class", "by_rule_id", "by_severity", "by_reachability"):
+            if key not in case:
+                continue
+            count_key = {
+                "by_class": "cicd_class",
+                "by_rule_id": "rule_id",
+                "by_severity": "severity",
+                "by_reachability": "app_reachability",
+            }[key]
+            _expect(
+                f"{case['id']}.{key}",
+                _count(matches, count_key, repo_root),
+                case[key],
+                errors,
+            )
 
 
 def validate(args: argparse.Namespace) -> int:
@@ -417,6 +665,9 @@ def validate(args: argparse.Namespace) -> int:
             int(helper["native_findings_expected"]),
             errors,
         )
+
+    _validate_workflow_rollup_regressions(expected, native, native_expected, repo_root, errors)
+    _validate_dashboard_rollup_contract(raw, expected, native, native_expected, errors)
 
     serialized = json.dumps(findings)
     if "secret_value" in serialized.lower():

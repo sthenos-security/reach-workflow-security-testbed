@@ -14,12 +14,12 @@ Golden baseline:
 
 | Baseline dimension | Expected |
 |---|---:|
-| Workflow fixture files | 39 |
-| Native-positive workflow files | 30 |
+| Workflow fixture files | 40 |
+| Native-positive workflow files | 31 |
 | Zero-native fixture files | 10 |
-| Native REACHABLE workflow-security findings | 142 |
-| Critical native findings | 33 |
-| High-risk native findings | 93 |
+| Native REACHABLE workflow-security findings | 146 |
+| Critical native findings | 30 |
+| High-risk native findings | 100 |
 | Medium-risk native findings | 10 |
 | Low-risk native findings | 6 |
 | Required native classes | 23 |
@@ -35,6 +35,12 @@ rows for workflow YAML. Workflow secret references such as
 `${{ secrets.NPM_TOKEN }}` are modeled as workflow authority evidence, not as
 literal leaked secret values. Path-backed findings are validated from persisted
 workflow review payload when the DB raw-data copy is size-capped.
+
+Dashboard rollup validation is intentionally separate from native finding
+validation: raw workflow signal rows, grouped workflow rows, and
+reachable/path-backed rows must remain distinct, and curated dashboard/cloud
+rollups must report that raw workflow YAML and AI prompt bodies are not
+published.
 
 The Poutine-derived and Scorecard-derived fixtures are original synthetic
 benchmark cases based on the accepted REACHABLE coverage-gap list. They are not
@@ -84,6 +90,12 @@ workflow edges, authorities, and a sink.
 | `.github/workflows/poutine-malformed-if-fail-open.yml` | Malformed authorization `if:` guard in front of release authority. | `cicd_auth_logic_error`, `cicd_secret_authority_exposure` |
 | `.github/workflows/poutine-bot-auto-merge-confused-deputy.yml` | Bot identity trusted as auto-merge authorization without dependency-source provenance. | `cicd_auth_logic_error`, `cicd_untrusted_checkout` |
 
+## Dashboard Rollup Regression Fixture
+
+| Fixture | Regression target | Expected result |
+|---|---|---|
+| `.github/workflows/dashboard-rollup-regression.yml` | Multiple native workflow rows in one disabled workflow path plus dashboard rollup publication. | 12 native rows, 1 grouped workflow path, 5 reachable/path-backed rows, 7 candidate rows, and rollup booleans proving no raw workflow YAML or AI prompt body is published. |
+
 ## Defended Controls
 
 | Fixture | Expected result | Why |
@@ -119,14 +131,17 @@ The workflow-security lab should prove:
 - scan-plan generic exclusions for `.github` do not demote workflow findings as
   noise
 - zero-native helper and defended fixtures remain clean
-- no raw workflow YAML, real secret value, or prompt text is required in curated
-  dashboard/cloud rollups
+- dashboard/cloud rollups keep raw workflow rows, grouped workflow rows, and
+  reachable/path-backed counts distinct
+- no raw workflow YAML, real secret value, or AI prompt body is published in
+  curated dashboard/cloud rollups
 
 Validation command:
 
 ```bash
 scan_dir="$(mktemp -d)"
 reachctl scan /path/to/reach-workflow-security-testbed --ci \
+  --dashboard \
   --output "$scan_dir" \
   --metadata-out "$scan_dir/metadata.json"
 
@@ -139,8 +154,8 @@ Expected success output:
 
 ```text
 Workflow-security expected-results validation passed
-  workflow files: 39
-  native findings: 142
+  workflow files: 40
+  native findings: 146
 ```
 
 See [expected/workflow-security.json](expected/workflow-security.json) for the

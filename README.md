@@ -19,12 +19,12 @@ proof target is:
 
 | Dimension | Expected |
 |---|---:|
-| Workflow fixture files | 39 |
-| Native-positive workflow files | 30 |
+| Workflow fixture files | 40 |
+| Native-positive workflow files | 31 |
 | Zero-native fixture files | 10 |
-| Native REACHABLE workflow-security findings | 142 |
-| Critical native findings | 33 |
-| High-risk native findings | 93 |
+| Native REACHABLE workflow-security findings | 146 |
+| Critical native findings | 30 |
+| High-risk native findings | 100 |
 | Medium-risk native findings | 10 |
 | Low-risk native findings | 6 |
 | Required risk classes | 23 |
@@ -73,6 +73,7 @@ security surface, separate from application source code and package inventory.
 | Environment protection bypass | `.github/workflows/environment-protection-bypass.yml` | `cicd_environment_protection_bypass` |
 | OIDC trust exposure | `.github/workflows/oidc-trust-exposure.yml` | `cicd_oidc_trust_exposure` |
 | Step summary exfiltration | `.github/workflows/step-summary-exfiltration.yml` | `cicd_step_summary_exfiltration` |
+| Dashboard rollup data-quality regression | `.github/workflows/dashboard-rollup-regression.yml` | existing workflow classes with raw row, grouped row, and reachable/path-backed count separation |
 | Workflow persistence | `.github/workflows/workflow-persistence.yml` | `cicd_workflow_persistence` |
 | Concurrency TOCTOU | `.github/workflows/concurrency-toctou.yml` | `cicd_concurrency_toctou` |
 | Poutine-derived all-secrets exposure | `.github/workflows/poutine-all-secrets-exposure.yml` | `cicd_secret_authority_exposure` |
@@ -107,6 +108,7 @@ workflow-security rows:
 ```bash
 scan_dir="$(mktemp -d)"
 reachctl scan /path/to/reach-workflow-security-testbed --ci \
+  --dashboard \
   --output "$scan_dir" \
   --metadata-out "$scan_dir/metadata.json"
 
@@ -127,7 +129,10 @@ Expected result:
 - optional tool health for `zizmor` and `actionlint` is reported separately from
   native coverage
 - zero-native helper and defended fixtures remain clean
-- cloud/dashboard rollups must not include raw workflow YAML or secret values
+- cloud/dashboard rollups keep raw workflow rows, grouped workflow rows, and
+  reachable/path-backed counts distinct
+- cloud/dashboard rollups must not include raw workflow YAML, AI prompt bodies,
+  or secret values
 - the validator prints `Workflow-security expected-results validation passed`
 
 ## Remediation Themes

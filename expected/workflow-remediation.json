@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "description": "Repo-patchable workflow remediation cases for local proof runs. Each case overwrites a vulnerable fixture path with a defended workflow body from this repository, then expects the native workflow-security findings for that path to drop to zero.",
+  "cases": [
+    {
+      "id": "WF-REMEDIATE-READONLY-TOKEN-01",
+      "path": ".github/workflows/scorecard-default-write-token.yml",
+      "replacement_source": ".github/workflows/defended-explicit-readonly-token.yml",
+      "expected_pre_classes": [
+        "cicd_auth_logic_error",
+        "cicd_trigger_abuse"
+      ],
+      "expected_post_findings": 0,
+      "actionlint_required": true,
+      "rationale": "Replace inherited default write authority on a low-trust trigger with explicit read-only permissions and an actor gate."
+    },
+    {
+      "id": "WF-REMEDIATE-TRUSTED-CHECKOUT-01",
+      "path": ".github/workflows/scorecard-untrusted-checkout-pr-head.yml",
+      "replacement_source": ".github/workflows/defended-untrusted-checkout.yml",
+      "expected_pre_classes": [
+        "cicd_untrusted_checkout"
+      ],
+      "expected_post_findings": 0,
+      "actionlint_required": true,
+      "rationale": "Replace privileged checkout of attacker-controlled pull-request head with a trusted base checkout plus read-only permissions."
+    },
+    {
+      "id": "WF-REMEDIATE-VERIFIED-DOWNLOAD-01",
+      "path": ".github/workflows/scorecard-pinned-dependencies-download-execute.yml",
+      "replacement_source": ".github/workflows/defended-verified-download-execute.yml",
+      "expected_pre_classes": [
+        "cicd_secret_authority_exposure"
+      ],
+      "expected_post_findings": 0,
+      "actionlint_required": true,
+      "rationale": "Replace privileged download-execute without integrity binding with a checksum-verified flow under read-only token permissions."
+    }
+  ]
+}
