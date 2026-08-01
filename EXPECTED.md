@@ -14,16 +14,16 @@ Golden baseline:
 
 | Baseline dimension | Expected |
 |---|---:|
-| Workflow fixture files | 40 |
+| Workflow fixture files | 44 |
 | Native-positive workflow files | 31 |
-| Zero-native fixture files | 10 |
+| Zero-native fixture files | 14 |
 | Native REACHABLE workflow-security findings | 146 |
 | Critical native findings | 30 |
 | High-risk native findings | 100 |
 | Medium-risk native findings | 10 |
 | Low-risk native findings | 6 |
 | Required native classes | 23 |
-| Defended native-control files | 4 |
+| Defended native-control files | 8 |
 
 The exact optional-tool count can change as `zizmor` and `actionlint` evolve.
 For that reason, CI should validate the exact native REACHABLE contract,
@@ -104,6 +104,10 @@ workflow edges, authorities, and a sink.
 | `.github/workflows/defended-guarded-pr.yml` | No auth-logic finding expected. | Low-trust trigger is guarded by actor/association checks and uses read-only permissions. |
 | `.github/workflows/defended-explicit-readonly-token.yml` | No native finding expected. | Low-trust trigger is guarded, permissions are explicit read-only, and no release, package, checkout, or secret sink is present. |
 | `.github/workflows/defended-untrusted-checkout.yml` | No native finding expected. | Low-trust trigger is guarded, permissions are read-only, and checkout stays on the trusted base boundary with a SHA-pinned action. |
+| `.github/workflows/defended-action-no-secret-in-scope.yml` | No native finding expected. | A job-wide write permission and an unrelated, input-less third-party action must not be conflated into action-supply-chain-exfiltration; no secret reaches the action itself. |
+| `.github/workflows/defended-workflow-dispatch-not-persistence.yml` | No native finding expected. | `gh workflow run` dispatches an existing workflow; it does not write or push workflow file content. |
+| `.github/workflows/defended-static-concurrency-group-with-artifacts.yml` | No native finding expected. | A concurrency group keyed on `github.workflow` serializes every run into one lane, defending against the TOCTOU race rather than causing it. |
+| `.github/workflows/defended-unrelated-compound-cache-key.yml` | No native finding expected. | `package-manager-cache: false` contains the substring "cache:" but is not GitHub Actions cache/artifact state. |
 | `.github/workflows/defended-verified-download-execute.yml` | No native finding expected. | Remote content is checksum-verified before execution and the workflow has read-only token permissions. |
 
 ## Zero-Native Helper
@@ -154,7 +158,7 @@ Expected success output:
 
 ```text
 Workflow-security expected-results validation passed
-  workflow files: 40
+  workflow files: 44
   native findings: 146
 ```
 

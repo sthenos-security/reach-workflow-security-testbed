@@ -19,16 +19,16 @@ proof target is:
 
 | Dimension | Expected |
 |---|---:|
-| Workflow fixture files | 40 |
+| Workflow fixture files | 44 |
 | Native-positive workflow files | 31 |
-| Zero-native fixture files | 10 |
+| Zero-native fixture files | 14 |
 | Native REACHABLE workflow-security findings | 146 |
 | Critical native findings | 30 |
 | High-risk native findings | 100 |
 | Medium-risk native findings | 10 |
 | Low-risk native findings | 6 |
 | Required risk classes | 23 |
-| Defended native-control files | 4 |
+| Defended native-control files | 8 |
 
 Optional tools such as `zizmor` and `actionlint` may add corroborating rows.
 The stable validation contract is the exact native REACHABLE finding set, the
@@ -89,6 +89,10 @@ security surface, separate from application source code and package inventory.
 | GitLab local include traversal | `.gitlab-ci.yml` including `.gitlab-includes/deploy.yml` | `cicd_secret_authority_exposure` attributed to the included deploy file |
 | Inventory-only Azure/Tekton adapters | `azure-pipelines.yml` and `.tekton/pipeline.yaml` | no native finding expected until source-to-sink semantics are fixture-proven |
 | Defended controls | `.github/workflows/defended-internal-release.yml`, `.github/workflows/defended-guarded-pr.yml`, `.github/workflows/defended-explicit-readonly-token.yml`, `.github/workflows/defended-untrusted-checkout.yml`, and `.github/workflows/defended-verified-download-execute.yml` | no native finding expected |
+| Defended: unrelated permission/secret not scoped to a third-party action | `.github/workflows/defended-action-no-secret-in-scope.yml` | no native finding expected (regression fixture for a codex-security scan FP) |
+| Defended: workflow dispatch is not workflow persistence | `.github/workflows/defended-workflow-dispatch-not-persistence.yml` | no native finding expected (regression fixture for a codex-security scan FP) |
+| Defended: static concurrency group defends against TOCTOU | `.github/workflows/defended-static-concurrency-group-with-artifacts.yml` | no native finding expected (regression fixture for a codex-security scan FP) |
+| Defended: unrelated compound cache key is not artifact state | `.github/workflows/defended-unrelated-compound-cache-key.yml` | no native finding expected (regression fixture for a codex-security scan FP) |
 
 ## Prior-Art Benchmark Notes
 

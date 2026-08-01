@@ -12,9 +12,9 @@
     "Poutine-derived and Scorecard-derived fixtures are original synthetic benchmark cases for coverage gaps; no upstream Poutine or Scorecard test code is copied.",
     "Bot auto-merge fixtures model bot identity as an insufficient trust boundary without dependency-source provenance."
   ],
-  "fixture_count": 40,
+  "fixture_count": 44,
   "native_positive_fixture_count": 31,
-  "zero_native_fixture_count": 10,
+  "zero_native_fixture_count": 14,
   "native_expected": {
     "scanner": "reachable-workflow-security",
     "total_findings": 146,
@@ -597,6 +597,26 @@
       "path": ".github/workflows/defended-untrusted-checkout.yml",
       "native_findings_expected": 0,
       "reason": "Low-trust trigger is guarded, permissions are read-only, and checkout stays on the trusted base boundary with a SHA-pinned action."
+    },
+    {
+      "path": ".github/workflows/defended-action-no-secret-in-scope.yml",
+      "native_findings_expected": 0,
+      "reason": "A job-wide contents/packages write permission and a build-only third-party action with zero inputs must not be conflated into action-supply-chain-exfiltration; no secret or token ever reaches the action."
+    },
+    {
+      "path": ".github/workflows/defended-workflow-dispatch-not-persistence.yml",
+      "native_findings_expected": 0,
+      "reason": "gh workflow run dispatches an existing, already-reviewed workflow; it does not write or push workflow file content, so it must not be treated as workflow-persistence."
+    },
+    {
+      "path": ".github/workflows/defended-static-concurrency-group-with-artifacts.yml",
+      "native_findings_expected": 0,
+      "reason": "A concurrency group keyed on github.workflow (or any static value) serializes every run into one lane, which defends against the concurrency-TOCTOU race rather than causing it, even alongside real artifact state."
+    },
+    {
+      "path": ".github/workflows/defended-unrelated-compound-cache-key.yml",
+      "native_findings_expected": 0,
+      "reason": "package-manager-cache: false contains the substring \"cache:\" but is not GitHub Actions cache/artifact state, so it must not satisfy the concurrency-TOCTOU rule's cache/artifact gate."
     }
   ],
   "zero_native_helpers": [

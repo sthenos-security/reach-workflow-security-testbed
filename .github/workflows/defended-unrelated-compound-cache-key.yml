@@ -1,0 +1,22 @@
+name: Defended - unrelated compound cache key is not artifact state
+
+on:
+  push:
+    tags:
+      - "npm-v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-pipeline
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@3df4ab11eba7bda6032a0b82a6bb43b11571feac
+        with:
+          package-manager-cache: false
+      - name: Simulated publish, no real publish sink
+        run: echo "publish simulation only"
