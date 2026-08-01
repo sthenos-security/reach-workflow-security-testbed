@@ -327,6 +327,11 @@ def _validate_dashboard_rollup_contract(
         "review_pending_count",
         "pending_review_count",
     )
+    reviewed_count = _first_count(
+        rollup,
+        "reviewed_count",
+        "review_audit_verdict_count",
+    )
 
     if contract.get("reachable_row_count_matches_path_backed", True):
         _expect(
@@ -335,11 +340,26 @@ def _validate_dashboard_rollup_contract(
             path_backed_count,
             errors,
         )
-    if contract.get("review_pending_count_matches_path_backed", True):
+    # NOTE: `review_pending_count` tracks the *current* review backlog, not a
+    # historical total. This scan pipeline runs the AI workflow-security
+    # review to completion before the dashboard rollup is generated, so for
+    # a fully completed scan the backlog is correctly 0, not path_backed_count
+    # (an assertion of `pending == path_backed_count` would only hold for a
+    # rollup snapshot taken *before* review ran). `reviewed_count` is the
+    # field that should match path_backed_count: it counts how many
+    # path-backed candidates actually received a verdict.
+    if contract.get("reviewed_count_matches_path_backed", True):
+        _expect(
+            "workflow_rollup.reviewed_count",
+            reviewed_count,
+            path_backed_count,
+            errors,
+        )
+    if contract.get("review_pending_count_is_zero_after_complete_review", True):
         _expect(
             "workflow_rollup.review_pending_count",
             review_pending_count,
-            path_backed_count,
+            0,
             errors,
         )
     if (

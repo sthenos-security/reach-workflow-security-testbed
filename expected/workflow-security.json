@@ -574,7 +574,8 @@
     "native_tool_count_matches_native": true,
     "raw_grouped_reachable_counts_distinct": true,
     "reachable_row_count_matches_path_backed": true,
-    "review_pending_count_matches_path_backed": true,
+    "reviewed_count_matches_path_backed": true,
+    "review_pending_count_is_zero_after_complete_review": true,
     "requires_triage_count_is_raw_minus_reachable": true
   },
   "defended_controls": [
