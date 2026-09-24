@@ -164,3 +164,28 @@ Workflow-security expected-results validation passed
 
 See [expected/workflow-security.json](expected/workflow-security.json) for the
 machine-readable expected contract.
+
+## CI/CD Attack-Stage Verdicts (`cicd_attack` regression)
+
+These five `attackstage-*` fixtures are the regression corpus for the `cicd_attack` lane —
+the stage that adjudicates each workflow finding to `exploit_verdict_json`
+(EXPLOITED / DEFENDED / NEEDS_HUMAN_REVIEW / UNVERIFIED). They lock in the fix for the
+nvidia-container-toolkit regression where the lane over-called EXPLOITED on workflows an
+external attacker cannot reach (v1 was 7/8 wrong). The native lane's REACHABLE candidates
+here are correct by design (reachable ≠ exploitable); the assertion is on the **attack
+verdict**. Machine contract: [expected/cicd-attack-verdicts.json](expected/cicd-attack-verdicts.json).
+
+| Fixture | Expected `cicd_attack` verdict | Why (GitHub execution rule) |
+|---|---|---|
+| `attackstage-fork-pr-secret-readonly.yml` | **DEFENDED** (never EXPLOITED) | Rule A — a fork `pull_request` runs read-only with no repo secrets; `secrets.GITHUB_TOKEN` gains nothing. |
+| `attackstage-fork-pr-oidc-guarded.yml` | **DEFENDED** (never EXPLOITED) | Rules A+C — a fork PR cannot mint OIDC, and the cloud step is `if: github.event_name != 'pull_request'`. |
+| `attackstage-workflow-call-only-secret.yml` | **NEEDS_HUMAN_REVIEW** (never EXPLOITED) | Rule D — `workflow_call` is not a trigger; trust equals the (unshown) callers'. Zero native findings. |
+| `attackstage-first-party-action-secret.yml` | **DEFENDED** (never EXPLOITED) | Rule E — `actions/*` is first-party; a secret to it is not third-party supply-chain exfiltration. Native correctly omits `cicd_action_supply_chain_exfiltration`. |
+| `attackstage-issue-comment-write-no-authz.yml` | **EXPLOITED** (positive control — must NOT become DEFENDED) | `issue_comment` runs in the base context with write; `contents: write` with no author gate — any user drives the write token. The over-call fixes must not silence this real finding. |
+
+**CI note:** these five fixtures raise the workflow-file count from 44 to 49. Regenerate the
+native golden (`expected/workflow-security.json` — `fixture_count`, the positive/zero split,
+and `native_expected`) on the next CI scan, and extend
+`ci/validate-workflow-security-results.py` to assert `signals.exploit_verdict_json` against
+`expected/cicd-attack-verdicts.json`. Native candidates per fixture are listed in that file
+for reference (four are native-positive; `workflow_call-only` is zero-native).

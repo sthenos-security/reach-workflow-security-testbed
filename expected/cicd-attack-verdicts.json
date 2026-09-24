@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "name": "reach-workflow-security-testbed \u2014 cicd_attack attack-stage verdict regression",
+  "verified_with_reachable": "reach-core cicd_attack lane (prompt cicd-attack-v2)",
+  "note": "The cicd_attack ATTACK stage must not over-call EXPLOITED on workflows an external attacker cannot actually reach (nvidia-container-toolkit regression: v1 was 7/8 wrong). Each fixture is scanned; the native lane may emit UNKNOWN candidates (listed), and the attack stage writes signals.exploit_verdict_json. The regression asserts that verdict. IMPORTANT: adding these fixtures changes the native golden \u2014 regenerate expected/workflow-security.json (fixture_count 44->49, positive/zero split, native_expected) on the same CI scan, and extend the validator to assert exploit_verdict_json against `expect_verdict` below.",
+  "fixtures": [
+    {
+      "file": ".github/workflows/attackstage-fork-pr-secret-readonly.yml",
+      "expect_verdict": "DEFENDED",
+      "must_not_be": "EXPLOITED",
+      "rule": "A \u2014 fork pull_request runs read-only, no repo secrets/OIDC",
+      "native_candidates": [
+        "cicd_secret_authority_exposure",
+        "cicd_auth_logic_error"
+      ],
+      "reason": "secrets.GITHUB_TOKEN on a fork PR is read-only; no repo secrets are exposed."
+    },
+    {
+      "file": ".github/workflows/attackstage-fork-pr-oidc-guarded.yml",
+      "expect_verdict": "DEFENDED",
+      "must_not_be": "EXPLOITED",
+      "rule": "A + C \u2014 fork PR gets no OIDC, and the cloud step is if: != pull_request",
+      "native_candidates": [
+        "cicd_oidc_trust_exposure",
+        "cicd_auth_logic_error"
+      ],
+      "reason": "a fork PR cannot mint OIDC, and the step is gated off pull_request."
+    },
+    {
+      "file": ".github/workflows/attackstage-workflow-call-only-secret.yml",
+      "expect_verdict": "NEEDS_HUMAN_REVIEW",
+      "must_not_be": "EXPLOITED",
+      "rule": "D \u2014 workflow_call is not a trigger; trust = the callers'",
+      "native_candidates": [],
+      "reason": "reusable workflow, no attacker-reachable caller shown; reachability is a human/caller fact."
+    },
+    {
+      "file": ".github/workflows/attackstage-first-party-action-secret.yml",
+      "expect_verdict": "DEFENDED",
+      "must_not_be": "EXPLOITED",
+      "rule": "E \u2014 actions/* is first-party, not third-party supply chain",
+      "native_candidates": [
+        "cicd_secret_authority_exposure",
+        "cicd_auth_logic_error",
+        "cicd_trigger_abuse"
+      ],
+      "reason": "the secret goes to a first-party action; the native lane correctly does NOT emit cicd_action_supply_chain_exfiltration."
+    },
+    {
+      "file": ".github/workflows/attackstage-issue-comment-write-no-authz.yml",
+      "expect_verdict": "EXPLOITED",
+      "must_not_be": "DEFENDED",
+      "rule": "positive control \u2014 issue_comment runs in base context; contents: write with no author gate",
+      "native_candidates": [
+        "cicd_auth_logic_error",
+        "cicd_command_injection",
+        "cicd_workflow_persistence"
+      ],
+      "reason": "any GitHub user can drive the write token; the over-call fixes must NOT silence this real finding."
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+name: attackstage - fork PR OIDC is unreachable and guarded
+
+# cicd_attack regression: id-token: write on a fork `pull_request`. A fork PR gets no OIDC
+# (rule A) AND the cloud step is gated `if: github.event_name != 'pull_request'` (rule C).
+# ATTACK stage must verdict DEFENDED, not EXPLOITED.
+on:
+  pull_request:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502
+        if: github.event_name != 'pull_request'
+        with:
+          role-to-assume: arn:aws:iam::111111111111:role/deploy
+          aws-region: us-east-1

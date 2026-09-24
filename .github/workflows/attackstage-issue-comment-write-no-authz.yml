@@ -1,0 +1,22 @@
+name: attackstage - issue_comment write with no author check
+
+# cicd_attack POSITIVE control (must stay EXPLOITED): issue_comment runs in the BASE context
+# with secrets/write, and this job has contents: write with NO author_association /
+# permission gate — any GitHub user can drive the write token. The over-call fixes must NOT
+# silence this real finding. (This is the cherrypick issue_comment+contents:write item,
+# nvidia §D — the real weakness the scanner mislocated.)
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  cherry-pick:
+    if: startsWith(github.event.comment.body, '/cherry-pick')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - run: git push origin HEAD:backport-${{ github.event.issue.number }}
