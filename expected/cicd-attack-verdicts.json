@@ -57,6 +57,23 @@
         "cicd_workflow_persistence"
       ],
       "reason": "any GitHub user can drive the write token; the over-call fixes must NOT silence this real finding."
+    },
+    {
+      "file": ".github/workflows/attackstage-embedded-secret-literal.yml",
+      "expect_verdict": "NONE",
+      "must_not_be": "EXPLOITED",
+      "owned_by": "secret",
+      "rule": "embedded literal secret \u2014 owned by the secret scanner, NOT the cicd_attack lane",
+      "native_candidates": [],
+      "expected_secret_finding": {
+        "signal_type": "secret",
+        "customer_verdict": "Loaded Secret",
+        "prod_status": "PRODUCTION (CI-config secret is not demoted)",
+        "pentested": false,
+        "auto_remediated": false,
+        "remediation": "guidance only, human-gated: rotate + move to a secret store (GitHub Secrets / OIDC)"
+      },
+      "reason": "A hardcoded literal credential in a workflow is a direct-report secret (Loaded Secret), not a control-plane attack. cicd_attack must NOT emit an EXPLOITED verdict for it; the workflow_security lane only cross-references it as literal_exposed authority. We do not auto-remediate it."
     }
   ]
 }

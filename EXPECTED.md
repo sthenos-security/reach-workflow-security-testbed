@@ -189,3 +189,21 @@ and `native_expected`) on the next CI scan, and extend
 `ci/validate-workflow-security-results.py` to assert `signals.exploit_verdict_json` against
 `expected/cicd-attack-verdicts.json`. Native candidates per fixture are listed in that file
 for reference (four are native-positive; `workflow_call-only` is zero-native).
+
+### Embedded literal secret (`attackstage-embedded-secret-literal.yml`)
+
+A hardcoded credential in a workflow (AWS canonical example keys — safe canary) is **owned
+by the secret scanner, not the `cicd_attack`/workflow_security lane**
+(`CICD-WORKFLOW-SECURITY.md` decision 4). Expected report:
+
+- `signal_type='secret'`, **Customer Verdict = Loaded Secret** (direct-report), **PRODUCTION**
+  (a CI-config secret is not demoted).
+- **Not pentested, not a `cicd_attack` EXPLOITED verdict** — the workflow_security lane only
+  cross-references it as `literal_exposed` authority evidence. Native workflow rules emit
+  **nothing** on the literal (confirmed).
+- **Remediation is guidance only and human-gated — we do NOT auto-remediate**: rotate the
+  credential and move it to a secret store (GitHub Secrets / OIDC). Choosing the store and
+  rotating are `admin_action_required` decisions.
+
+Regression assertion: `cicd_attack` must never stamp EXPLOITED on this workflow; the finding
+comes from the secret lane. See `expected/cicd-attack-verdicts.json`.
