@@ -49,7 +49,8 @@ def _load_native_findings_from_metadata(metadata_path: Path) -> dict[str, Any]:
             requires_ai_review,
             ai_review_payload,
             scanner,
-            raw_data
+            raw_data,
+            exploit_verdict_json
         from signals
         where scanner = ?
     """
@@ -80,6 +81,9 @@ def _load_native_findings_from_metadata(metadata_path: Path) -> dict[str, Any]:
                 "ai_review_payload": payload,
                 "cicd_class": parsed.get("cicd_class") or _payload_cicd_class(row["rule_id"], payload),
                 "evidence": _finding_evidence(parsed, payload),
+                "exploit_verdict": str(
+                    _json_dict(row["exploit_verdict_json"]).get("verdict") or ""
+                ).strip().upper(),
             }
         )
     con.close()
@@ -482,6 +486,57 @@ def _validate_workflow_rollup_regressions(
             )
 
 
+def _validate_cicd_attack_verdicts(
+    findings: list[dict[str, Any]], repo_root: Path | None, errors: list[str]
+) -> None:
+    """Assert the cicd_attack attack-stage verdict on the `attackstage-*` regression
+    fixtures against expected/cicd-attack-verdicts.json.
+
+    Runs ONLY when the attack lane actually ran (some finding carries a populated
+    exploit_verdict); a native-only scan writes no verdict, so it is skipped with a note.
+    The core regression is the nvidia over-call: a fixture whose expected verdict is not
+    EXPLOITED must never carry an EXPLOITED verdict; the positive control must.
+    """
+    contract_path = (
+        (repo_root / "expected" / "cicd-attack-verdicts.json")
+        if repo_root else Path("expected/cicd-attack-verdicts.json")
+    )
+    if not contract_path.exists():
+        return
+    contract = _load_json(contract_path)
+
+    by_file: dict[str, set[str]] = {}
+    saw_any_verdict = False
+    for finding in findings:
+        verdict = str(finding.get("exploit_verdict") or "")
+        if verdict:
+            saw_any_verdict = True
+        base = Path(str(finding.get("file_path") or "")).name
+        by_file.setdefault(base, set()).add(verdict)
+
+    if not saw_any_verdict:
+        print("cicd_attack verdicts: skipped (no exploit_verdict in this scan — "
+              "the attack lane did not run; needs a funded cicd_attack pass)")
+        return
+
+    for fixture in contract.get("fixtures", []):
+        base = Path(str(fixture.get("file") or "")).name
+        expect = str(fixture.get("expect_verdict") or "").upper()
+        seen = by_file.get(base, set())
+        if expect == "EXPLOITED":
+            if "EXPLOITED" not in seen:
+                errors.append(
+                    f"cicd_attack {base}: expected EXPLOITED, saw {sorted(v for v in seen if v) or 'none'}"
+                )
+        else:
+            # DEFENDED / NEEDS_HUMAN_REVIEW / NONE (secret-lane): never EXPLOITED — this is
+            # the over-call regression the fix closed.
+            if "EXPLOITED" in seen:
+                errors.append(
+                    f"cicd_attack {base}: must NOT be EXPLOITED (expected {expect or 'non-EXPLOITED'})"
+                )
+
+
 def validate(args: argparse.Namespace) -> int:
     expected = _load_json(Path(args.expected))
     raw = (
@@ -509,6 +564,9 @@ def validate(args: argparse.Namespace) -> int:
     _expect("native.by_rule_id", _count(native, "rule_id"), native_expected["by_rule_id"], errors)
     _expect("native.by_severity", _count(native, "severity"), native_expected["by_severity"], errors)
     _expect("native.by_path", _count(native, "file_path", repo_root), native_expected["by_path"], errors)
+    # cicd_attack attack-stage verdict regression (attackstage-* fixtures). No-op on a
+    # native-only scan; asserts against expected/cicd-attack-verdicts.json when the lane ran.
+    _validate_cicd_attack_verdicts(findings, repo_root, errors)
     native_reachable_without_path = [
         finding
         for finding in native
