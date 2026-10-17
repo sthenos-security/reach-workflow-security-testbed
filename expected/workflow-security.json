@@ -10,9 +10,10 @@
     "zizmor and actionlint findings are useful corroborating evidence but are not exact-count gates.",
     "Dashboard rollup regression fixtures keep raw workflow rows, grouped workflow rows, and reachable/path-backed rows distinct without publishing raw workflow YAML or AI prompt bodies.",
     "Poutine-derived and Scorecard-derived fixtures are original synthetic benchmark cases for coverage gaps; no upstream Poutine or Scorecard test code is copied.",
-    "Bot auto-merge fixtures model bot identity as an insufficient trust boundary without dependency-source provenance."
+    "Bot auto-merge fixtures model bot identity as an insufficient trust boundary without dependency-source provenance.",
+    "online_only_paths carry detections that fire only in connected scans (live action-ref resolver); the validator excludes them from offline-stable aggregates."
   ],
-  "fixture_count": 50,
+  "fixture_count": 51,
   "native_positive_fixture_count": 31,
   "zero_native_fixture_count": 14,
   "native_expected": {
@@ -467,7 +468,7 @@
       "build_component_names": [
         "docker/build-push-action",
         "downloads.example.invalid",
-        "github/dependency-review-action",
+        "actions/dependency-review-action",
         "ghcr.io/reachable-testbed/releaser:latest",
         "third-party/release-action"
       ],
@@ -665,5 +666,28 @@
     "raw_workflow_yaml_published": false,
     "raw_ai_prompt_published": false,
     "real_secret_values": false
-  }
+  },
+  "online_only_paths": [
+    ".github/workflows/online-action-ref-verification.yml"
+  ],
+  "online_only_detections": [
+    {
+      "id": "WF-CICD-REF-MISSING-01",
+      "path": ".github/workflows/online-action-ref-verification.yml",
+      "rule_id": "cicd_action_ref_missing",
+      "class": "cicd_action_ref_missing",
+      "risk": "MEDIUM",
+      "expected_min_findings": 1,
+      "remediation": "The coordinate does not exist upstream \u2014 fix the action name (typosquat check) or remove the step."
+    },
+    {
+      "id": "WF-CICD-IMPOSTOR-01",
+      "path": ".github/workflows/online-action-ref-verification.yml",
+      "rule_id": "cicd_action_impostor_commit",
+      "class": "cicd_action_impostor_commit",
+      "risk": "HIGH",
+      "expected_min_findings": 1,
+      "remediation": "The pinned SHA is not a commit in the upstream repository \u2014 pin to a real upstream commit SHA."
+    }
+  ]
 }

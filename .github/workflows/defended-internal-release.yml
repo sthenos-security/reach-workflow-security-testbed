@@ -11,7 +11,7 @@ jobs:
   internal-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Safe internal status
         run: |
           echo "internal release checks only"

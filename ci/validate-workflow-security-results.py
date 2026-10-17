@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sqlite3
 import sys
 from collections import Counter
@@ -266,6 +267,7 @@ def _validate_dashboard_rollup_contract(
     native: list[dict[str, Any]],
     native_expected: dict[str, Any],
     errors: list[str],
+    native_unfiltered: list[dict[str, Any]] | None = None,
 ) -> None:
     contract = expected.get("dashboard_rollup_contract")
     if not isinstance(contract, dict):
@@ -304,7 +306,9 @@ def _validate_dashboard_rollup_contract(
         _expect(
             "workflow_rollup.by_tool.native",
             _int_or_none(by_tool.get(native_expected["scanner"])),
-            len(native),
+            # The rollup counts every row the native scanner emitted — which
+            # includes the online-only paths the aggregate checks filter out.
+            len(native_unfiltered if native_unfiltered is not None else native),
             errors,
         )
 
@@ -557,6 +561,23 @@ def validate(args: argparse.Namespace) -> int:
         if str(finding.get("scanner") or "") == native_expected["scanner"]
     ]
 
+    # Online-only fixtures carry detections that fire only in connected
+    # scans (live action-ref resolver). They are excluded from every
+    # offline-stable aggregate so one contract serves both modes.
+    online_only_paths = set(expected.get("online_only_paths") or [])
+    native_online = native  # pre-filter view for the online-only checks
+    if online_only_paths:
+        native = [
+            finding
+            for finding in native
+            if _normalize_path(finding.get("file_path"), repo_root)
+            not in online_only_paths
+        ]
+    # Connected mode: --online, or REACHABLE_ACTION_REFS_OFFLINE unset/!=1.
+    # Offline runs skip the online_only detections entirely — silence there
+    # is correct, not a pass.
+    online = bool(args.online) or os.environ.get("REACHABLE_ACTION_REFS_OFFLINE") != "1"
+
     _expect("fixture_count", stats.get("workflow_files"), expected["fixture_count"], errors)
     _expect("coverage.status", coverage.get("status"), expected["minimum_contract"]["coverage_status"], errors)
     _expect("native.total_findings", len(native), native_expected["total_findings"], errors)
@@ -644,6 +665,25 @@ def validate(args: argparse.Namespace) -> int:
                 _expected_ai_review_prompt(finding, expected),
                 errors,
             )
+
+    for case in expected.get("online_only_detections") or []:
+        if not online:
+            continue
+        matches = _matching(
+            native_online,
+            path=case["path"],
+            rule_id=case["rule_id"],
+            cicd_class=case["class"],
+            scanner=native_expected["scanner"],
+            repo_root=repo_root,
+        )
+        if len(matches) < int(case["expected_min_findings"]):
+            errors.append(
+                f"{case['id']}: expected at least {case['expected_min_findings']} "
+                f"{case['rule_id']} finding(s) in {case['path']}, got {len(matches)}"
+            )
+        for finding in matches:
+            _expect(f"{case['id']}.risk", finding.get("severity"), case["risk"], errors)
 
     for case in expected.get("required_evidence", []):
         matches = _matching(
@@ -745,7 +785,7 @@ def validate(args: argparse.Namespace) -> int:
         )
 
     _validate_workflow_rollup_regressions(expected, native, native_expected, repo_root, errors)
-    _validate_dashboard_rollup_contract(raw, expected, native, native_expected, errors)
+    _validate_dashboard_rollup_contract(raw, expected, native, native_expected, errors, native_online)
 
     serialized = json.dumps(findings)
     if "secret_value" in serialized.lower():
@@ -776,6 +816,11 @@ def main() -> int:
         "--expected",
         default=str(Path(__file__).resolve().parents[1] / "expected" / "workflow-security.json"),
         help="Path to expected workflow-security contract",
+    )
+    parser.add_argument(
+        "--online",
+        action="store_true",
+        help="Assert online_only_detections (live action-ref resolver ran)",
     )
     parser.add_argument(
         "--repo-root",

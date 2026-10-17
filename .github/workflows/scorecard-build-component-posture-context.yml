@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: docker/build-push-action@v6
       - uses: third-party/release-action@v1
-      - uses: github/dependency-review-action@0123456789abcdef0123456789abcdef01234567
+      - uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48
       - run: |
           curl -fsSL https://downloads.example.invalid/bootstrap.sh | bash
           cosign verify ghcr.io/reachable-testbed/app@sha256:abcd

@@ -1,0 +1,24 @@
+name: Fixture - Online action ref verification
+
+# ONLINE-ONLY fixture — produces findings only when the live action-ref
+# resolver runs (connected scans). In airgap/offline scans both steps are
+# correctly silent: first-party refs are exempt from cicd_unpinned_action,
+# and an unverifiable SHA reports unverifiable-offline semantics, never
+# clean. See CICD-WORKFLOW-SECURITY.md decision 7.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-action-refs:
+    runs-on: ubuntu-latest
+    steps:
+      # cicd_action_ref_missing: this coordinate does not exist on github.com.
+      - uses: actions/checkout-does-not-exist@v9
+
+      # cicd_action_impostor_commit: 40-hex, well-formed, but not a real commit
+      # in actions/checkout — the fork-only commit shape.
+      - uses: actions/checkout@0123456789abcdef0123456789abcdef01234567

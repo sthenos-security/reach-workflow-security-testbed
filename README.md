@@ -121,6 +121,13 @@ python ci/validate-workflow-security-results.py \
   --repo-root /path/to/reach-workflow-security-testbed
 ```
 
+For a connected scan also pass `--online` — it asserts the
+`online_only_detections` contract (`cicd_action_ref_missing`,
+`cicd_action_impostor_commit` on the online fixture, which only fire when
+the live action-ref resolver ran). Offline runs (`REACHABLE_ACTION_REFS_OFFLINE=1`)
+skip those checks; the online fixture's paths are excluded from every
+offline-stable aggregate so one expected file serves both modes.
+
 Expected result:
 
 - workflow-security scanning finds the expected deterministic classes and

@@ -21,7 +21,7 @@ jobs:
       security-events: write
       contents: read
     steps:
-      - uses: github/codeql-action/upload-sarif@0123456789abcdef0123456789abcdef01234567
+      - uses: github/codeql-action/upload-sarif@ce5e7eeac396d720fe2d802714996c8ce561e311
         with:
           sarif_file: results.sarif
 
