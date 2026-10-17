@@ -21,4 +21,11 @@ jobs:
         with:
           name: candidate-release
           path: dist/
+      # Third-party action on a mutable tag — the WF-CICD-PINNING-01 canary.
+      # actions/* are first-party and deliberately unflagged
+      # (CICD-WORKFLOW-SECURITY.md decision 7); this is the class the rule
+      # actually detects.
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/release.txt
 
