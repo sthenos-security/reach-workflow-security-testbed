@@ -665,7 +665,20 @@
     "raw_yaml_in_cloud_rollup": false,
     "raw_workflow_yaml_published": false,
     "raw_ai_prompt_published": false,
-    "real_secret_values": false
+    "real_secret_values": false,
+
+    "posture_classes": [
+      "cicd_action_impostor_commit",
+      "cicd_action_ref_missing",
+      "cicd_action_supply_chain_exfiltration",
+      "cicd_action_tag_moved",
+      "cicd_action_unverifiable_offline",
+      "cicd_unpinned_action"
+    ],
+    "posture_class_app_reachability": "NOT_APPLICABLE",
+    "posture_class_severity_is_preserved": true,
+    "posture_class_contract_note": "These classes are true on PRESENCE, not on execution: a secret handed to a third-party action is disclosed on every legitimate run. Reachability does not apply to them, so they must never sit in UNKNOWN waiting for an adjudication that cannot run. NOT_APPLICABLE must NOT demote severity on a vulnerability row - pinned here because nothing pinned it on 2026-10-20 and four CRITICAL findings silently became LOW via the severity rubric's inventory clamp.",
+    "execution_class_app_reachability": "UNKNOWN"
   },
   "online_only_paths": [
     ".github/workflows/online-action-ref-verification.yml"
